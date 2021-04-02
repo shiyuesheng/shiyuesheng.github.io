@@ -2,14 +2,326 @@
 <feed xmlns="http://www.w3.org/2005/Atom">
     <id>https://shiyuesheng.github.io</id>
     <title>玄戈大人</title>
-    <updated>2020-06-14T23:13:52.309Z</updated>
+    <updated>2021-04-02T06:27:52.538Z</updated>
     <generator>https://github.com/jpmonette/feed</generator>
     <link rel="alternate" href="https://shiyuesheng.github.io"/>
     <link rel="self" href="https://shiyuesheng.github.io/atom.xml"/>
     <subtitle>垂露悬针聚墨藏锋的章法，书同南北交手相传漫天涯</subtitle>
     <logo>https://shiyuesheng.github.io/images/avatar.png</logo>
     <icon>https://shiyuesheng.github.io/favicon.ico</icon>
-    <rights>All rights reserved 2020, 玄戈大人</rights>
+    <rights>All rights reserved 2021, 玄戈大人</rights>
+    <entry>
+        <title type="html"><![CDATA[Lambda表达式被编译成了什么]]></title>
+        <id>https://shiyuesheng.github.io/post/lambda-biao-da-shi-bei-bian-yi-cheng-liao-shi-me/</id>
+        <link href="https://shiyuesheng.github.io/post/lambda-biao-da-shi-bei-bian-yi-cheng-liao-shi-me/">
+        </link>
+        <updated>2021-04-02T06:26:55.000Z</updated>
+        <content type="html"><![CDATA[<h1 id="lambda表达式被编译成了什么">Lambda表达式被编译成了什么</h1>
+<blockquote>
+<p>先进行总结，方便回顾：</p>
+<ul>
+<li>
+<p>编译时</p>
+<ul>
+<li>Lambda表达式会在当前的声明类中生成一个私有静态方法， 方法实现了Lambda表达式的代码逻辑</li>
+</ul>
+</li>
+<li>
+<ul>
+<li>生成invokedynamic指令， 调用bootstrap methods， 由java.lang.invoke.LambdaMetafactory.metafactory方法实现</li>
+</ul>
+</li>
+<li>
+<p>运行时</p>
+</li>
+<li>
+<ul>
+<li>invokedynamic指令调用metafactory方法。它会返回一个CallSite, 此CallSite返回目标类型的一个匿名实现类， 此类内部关联编译时生成的私有静态方法</li>
+<li>lambda表达式进行传递时，传递的是生成的内部类实例。</li>
+</ul>
+</li>
+</ul>
+</blockquote>
+<h2 id="一个简单的例子">一个简单的例子</h2>
+<pre><code class="language-java">public class LambdaTest {
+    public static final LambdaTest lambdaTest = new LambdaTest();
+    public String getName() {
+        return &quot;9627&quot;;
+    }
+    public static void main(String[] args) {
+        Function&lt;?, String&gt; functionDemo = s -&gt; LambdaTest.lambdaTest.getName();
+    }
+}
+</code></pre>
+<p>使用命令编译 javac -g LambdaTest.java   （此时并没有生成内部类class文件）</p>
+<p>使用命令查看字节码 javap -v -p LambdaTest.class	（编译的文件过大，已屏蔽掉干扰信息，只关注lambda相关信息）</p>
+<pre><code class="language-java">public static void main(java.lang.String[]);
+    descriptor: ([Ljava/lang/String;)V
+    flags: ACC_PUBLIC, ACC_STATIC
+    Code:
+      stack=1, locals=2, args_size=1
+         0: invokedynamic #6,  0              // InvokeDynamic #0:apply:()Ljava/util/function/Function;
+         5: astore_1
+         6: return
+
+private static java.lang.String lambda$main$0(java.lang.Object);
+    descriptor: (Ljava/lang/Object;)Ljava/lang/String;
+    flags: ACC_PRIVATE, ACC_STATIC, ACC_SYNTHETIC
+    Code:
+      stack=1, locals=1, args_size=1
+         0: getstatic     #7                  // Field lambdaTest:Lsuishen/redis/hash/mapping/test/LambdaTest;
+         3: invokevirtual #8                  // Method getName:()Ljava/lang/String;
+         6: areturn
+         
+BootstrapMethods:
+  0: #46 invokestatic java/lang/invoke/LambdaMetafactory.metafactory:(此处方法签名描述省略)
+    Method arguments:
+      #47 (Ljava/lang/Object;)Ljava/lang/Object;
+      #48 invokestatic suishen/redis/hash/mapping/test/LambdaTest.lambda$main$0:(Ljava/lang/Object;)Ljava/lang/String;
+      #49 (Ljava/lang/Object;)Ljava/lang/String;
+</code></pre>
+<h3 id="invokedynamic-指令">invokedynamic 指令</h3>
+<p>可以看到例子中的lambda表达式   <code>s -&gt; LambdaTest.lambdaTest.getName()</code> 编译后生成了 invokedynamic 指令，<code>#6</code>定位到常量池中下面的记录。</p>
+<p>​			<em>#6 = InvokeDynamic      #0:#50         // #0:apply:()Ljava/util/function/Function;</em></p>
+<p>其中 <code>#0</code> 指向的 BootstrapMethods 区的静态工厂方法   <code>java.lang.invoke.LambdaMetafactory.metafactory</code></p>
+<p>LambdaMetafactory.metafactory()方法会利用asm字节码框架为 lambda表达式生成内部类，底层细节，此处不做深究。</p>
+<h3 id="私有静态方法">私有静态方法</h3>
+<p>编译后的class多了一个私有静态方法， LambdaTest.lambda$main$0(Object),尝试将字节码翻译成java代码，如下：</p>
+<pre><code class="language-java">private static java.lang.String lambda$main$0(Object o) {
+		return LambdaTest.LambdaTest.getName();
+}
+</code></pre>
+<p>方法逻辑跟栗子中的lambda逻辑一致。</p>
+<p>编译期间未看到生成的相关内部类。</p>
+<h2 id="运行lambda">运行Lambda</h2>
+<p>执行命令 <strong>java -Djdk.internal.lambda.dumpProxyClasses TestLambda</strong></p>
+<p>运行结束后会在同级目录生成一个内部类的class文件   <strong>LambdaTest$$Lambda$1.class</strong></p>
+<p>使用命令查看内部类的字节码 <strong>javap -v -p LambdaTest$$Lambda$1.class</strong>，也可以在idea中直接打开查看，此处直观的展示了idea反编译后的内容</p>
+<pre><code class="language-java">final class LambdaTest$$Lambda$1 implements Function {
+    private LambdaTest$$Lambda$1() {
+    }
+  
+    @Hidden
+    public Object apply(Object var1) {
+        return LambdaTest.lambda$main$0(var1);
+    }
+}
+</code></pre>
+<p>简单分析下：</p>
+<p>1、该内部类类名 LambdaTest$$Lambda$1，</p>
+<p>2、实现了函数式接口Function 的apply方法，</p>
+<p>3、方法内部调用的上文提到的，该内部类所在的声明类，编译后所生成的私有静态方法。LambdaTest.lambda$main$0(Object)</p>
+<p>到这，就可以把lambda运行逻辑串联起来了。</p>
+<ul>
+<li>编译时lambda表达式会在当前声明类，生成一个私有静态方法，该方法逻辑与lambda逻辑相同。</li>
+<li>运行时动态的使用asm字节码工具生成一个实现了目标函数式接口的内部类。</li>
+<li>内部类进行实例化，方法间传递的是内部类的实例</li>
+<li>调用内部类实例的函数式接口方法（SAM Single Abstract Method）</li>
+<li>内部继续调用了声明类的私有静态方法，执行我们编写的真正的lambda表达式逻辑</li>
+</ul>
+<h2 id="捕获变量的例子">捕获变量的例子</h2>
+<p>在匿名内部类中调用外部参数时，参数必须声明为final。</p>
+<p>Lambda表达式内也可以引用上下文中的变量，称之为捕获变量、捕获参数。</p>
+<p>Lambda表达式内捕获的外部变量，可以不声明为final类型，但是上下文语义中必须等同与final，也就是在后续逻辑中不可修改。</p>
+<p>同样的一个简单的例子，lambda表达式 <code>s -&gt; lambdaTest.getName()</code>捕获了上下文中的变量 lambdaTest。</p>
+<pre><code class="language-java">public class LambdaTest {
+    public String getName() {
+        return &quot;9627&quot;;
+    }
+    public static void main(String[] args) {
+        LambdaTest lambdaTest = new LambdaTest();
+        Function&lt;?, String&gt; functionDemo = s -&gt; lambdaTest.getName();
+    }
+}
+</code></pre>
+<p>使用命令编译 javac -g LambdaTest.java</p>
+<p>使用命令查看字节码 javap -v -p LambdaTest.class</p>
+<pre><code class="language-java">public static void main(java.lang.String[]);
+    descriptor: ([Ljava/lang/String;)V
+    flags: ACC_PUBLIC, ACC_STATIC
+    Code:
+      stack=2, locals=3, args_size=1
+         0: new           #6                  // class suishen/redis/hash/mapping/test/LambdaTest
+         3: dup
+         4: invokespecial #7                  // Method &quot;&lt;init&gt;&quot;:()V
+         7: astore_1
+         8: aload_1
+         9: invokedynamic #8,  0              // InvokeDynamic #0:apply:(Lsuishen/redis/hash/mapping/test/LambdaTest;)Ljava/util/function/Function;
+        14: astore_2
+        15: return
+
+private static java.lang.String lambda$main$0(suishen.redis.hash.mapping.test.LambdaTest, java.lang.Object);
+    descriptor: (Lsuishen/redis/hash/mapping/test/LambdaTest;Ljava/lang/Object;)Ljava/lang/String;
+    flags: ACC_PRIVATE, ACC_STATIC, ACC_SYNTHETIC
+    Code:
+      stack=1, locals=2, args_size=2
+         0: aload_0
+         1: invokevirtual #9                  // Method getName:()Ljava/lang/String;
+         4: areturn
+BootstrapMethods:
+  0: #45 invokestatic java/lang/invoke/LambdaMetafactory.metafactory:(此处方法签名描述省略)
+    Method arguments:
+      #46 (Ljava/lang/Object;)Ljava/lang/Object;
+      #47 invokestatic suishen/redis/hash/mapping/test/LambdaTest.lambda$main$0:(Lsuishen/redis/hash/mapping/test/LambdaTest;Ljava/lang/Object;)Ljava/lang/String;
+      #48 (Ljava/lang/Object;)Ljava/lang/String;
+</code></pre>
+<h3 id="私有静态方法-2">私有静态方法</h3>
+<p>尝试将字节码翻译成java代码，看下区别在哪里。</p>
+<pre><code class="language-java">private static java.lang.String lambda$main$0(LambdaTest lambdaTest, Object o) {
+		return lambdaTest.getName();
+}
+</code></pre>
+<p>方法逻辑跟栗子中的lambda逻辑一致。但是方法参数多了一个LambdaTest lambdaTest。</p>
+<h3 id="内部类">内部类</h3>
+<p>执行命令 <strong>java -Djdk.internal.lambda.dumpProxyClasses TestLambda</strong></p>
+<p>使用命令查看内部类的字节码 <strong>javap -v -p LambdaTest.class</strong>，也可以在idea中直接打开查看，此处直观的展示了idea反编译后的内容</p>
+<pre><code class="language-java">final class LambdaTest$$Lambda$1 implements Function {
+    private final LambdaTest arg$1;
+
+    private LambdaTest$$Lambda$1(LambdaTest var1) {
+        this.arg$1 = var1;
+    }
+
+    private static Function get$Lambda(LambdaTest var0) {
+        return new LambdaTest$$Lambda$1(var0);
+    }
+
+    @Hidden
+    public Object apply(Object var1) {
+        return LambdaTest.lambda$main$0(this.arg$1, var1);
+    }
+}
+</code></pre>
+<p>简单分析下：</p>
+<p>1、该内部类类名 LambdaTest$$Lambda$1，</p>
+<p>2、实现了函数式接口Function 的apply方法，</p>
+<p>3、内置了一个<strong>Field private final LambdaTest arg$1</strong> 这个实例属性在运行期动态调用，进行内部类实例化时，捕获自声明类上下文中的变量</p>
+<p>4、函数式接口方法内部调用的上文提到的私有静态方法，同时传入捕获的变量。前后呼应。</p>
+<p>梳理下存在捕获变量的lambda流程：</p>
+<ul>
+<li>编译时lambda表达式会在当前声明类，生成一个私有静态方法，该方法逻辑与lambda逻辑相同。如果lambda表达式有捕获变量，则方法会多出与对应类型的参数。</li>
+<li>运行时动态的使用asm字节码工具生成一个实现了目标函数式接口的内部类。如果lambda表达式有捕获变量，则内部类中会多出与之对应的属性。（<em><strong>此处大胆假设，因为不管执行多少次，生成的内部类class都是一样的，所以运行时应该会优化成只执行一次</strong></em>）</li>
+<li>内部类进行实例化，方法间传递的是内部类的实例。（<em><strong>此处大胆假设，因为捕获了上下文中的变量，而这个变量在运行时是变化的，不确定的，所以每次调用都生成的新的内部类实例</strong></em>）</li>
+<li>调用内部类实例的函数式接口方法（SAM Single Abstract Method）</li>
+<li>内部继续调用了声明类的私有静态方法，执行我们编写的真正的lambda表达式逻辑</li>
+</ul>
+<h2 id="重复的lambda表达式">重复的Lambda表达式</h2>
+<h3 id="多个长得一样的lambda表达式">多个长得一样的lambda表达式</h3>
+<pre><code class="language-java">public static void main(String[] args) {
+    LambdaTest lambdaTest = new LambdaTest();
+    Function&lt;?, String&gt; functionDemo = s -&gt; lambdaTest.getName();
+    Function&lt;?, String&gt; functionDemo1 = s -&gt; lambdaTest.getName();
+}
+
+</code></pre>
+<ul>
+<li>
+<p>编译后会生成两个invokedynamic命令，两个私有静态方法</p>
+</li>
+<li>
+<p>运行时会生成两个内部类class</p>
+</li>
+</ul>
+<h3 id="循环同一个lambda表达式">循环同一个lambda表达式</h3>
+<pre><code class="language-java">public static void main(String[] args) {
+    LambdaTest lambdaTest = new LambdaTest();
+    for (int i = 0; i &lt; 10; i++) {
+        Function&lt;?, String&gt; functionDemo = s -&gt; lambdaTest.getName();
+    }
+}
+
+</code></pre>
+<ul>
+<li>
+<p>编译后会生成一个invokedynamic命令，一个私有静态方法</p>
+</li>
+<li>
+<p>运行时会生成一个内部类class</p>
+</li>
+</ul>
+<h2 id="测试生成的实例是否相同">测试生成的实例是否相同</h2>
+<h3 id="不存在捕获变量">不存在捕获变量</h3>
+<pre><code class="language-java">public final static LambdaTest lambdaTest = new LambdaTest();
+public static void main(String[] args) {
+    LambdaTest lambdaTest = LambdaTest.lambdaTest;
+    for (int i = 0; i &lt; 5; i++) {
+        Function&lt;?, String&gt; functionDemo = s -&gt; LambdaTest.lambdaTest.getName();
+        System.out.println(functionDemo);
+    }
+}
+打印信息：
+suishen.redis.hash.mapping.test.LambdaTest$$Lambda$1/1973336893@4cdf35a9
+suishen.redis.hash.mapping.test.LambdaTest$$Lambda$1/1973336893@4cdf35a9
+suishen.redis.hash.mapping.test.LambdaTest$$Lambda$1/1973336893@4cdf35a9
+suishen.redis.hash.mapping.test.LambdaTest$$Lambda$1/1973336893@4cdf35a9
+suishen.redis.hash.mapping.test.LambdaTest$$Lambda$1/1973336893@4cdf35a9
+
+</code></pre>
+<p>生成的实例是相同的。</p>
+<h3 id="存在捕获变量">存在捕获变量</h3>
+<pre><code class="language-java">public final static LambdaTest lambdaTest = new LambdaTest();
+public static void main(String[] args) {
+    LambdaTest lambdaTest = new LambdaTest();
+    for (int i = 0; i &lt; 5; i++) {
+        Function&lt;?, String&gt; functionDemo = s -&gt; lambdaTest.getName();
+        System.out.println(functionDemo);
+    }
+}
+打印信息：
+suishen.redis.hash.mapping.test.LambdaTest$$Lambda$1/1973336893@45fe3ee3
+suishen.redis.hash.mapping.test.LambdaTest$$Lambda$1/1973336893@4cdf35a9
+suishen.redis.hash.mapping.test.LambdaTest$$Lambda$1/1973336893@4c98385c
+suishen.redis.hash.mapping.test.LambdaTest$$Lambda$1/1973336893@5fcfe4b2
+suishen.redis.hash.mapping.test.LambdaTest$$Lambda$1/1973336893@6bf2d08e
+
+</code></pre>
+<p>生成的实例是不同的</p>
+<h3 id="存在捕获变量捕获变量是类的静态属性">存在捕获变量，捕获变量是类的静态属性</h3>
+<pre><code class="language-java">public final static LambdaTest lambdaTest = new LambdaTest();
+public static void main(String[] args) {
+    LambdaTest lambdaTest = LambdaTest.lambdaTest;
+    for (int i = 0; i &lt; 5; i++) {
+        Function&lt;?, String&gt; functionDemo = s -&gt; lambdaTest.getName();
+        System.out.println(functionDemo);
+    }
+}
+打印信息：
+suishen.redis.hash.mapping.test.LambdaTest$$Lambda$1/1973336893@45fe3ee3
+suishen.redis.hash.mapping.test.LambdaTest$$Lambda$1/1973336893@4cdf35a9
+suishen.redis.hash.mapping.test.LambdaTest$$Lambda$1/1973336893@4c98385c
+suishen.redis.hash.mapping.test.LambdaTest$$Lambda$1/1973336893@5fcfe4b2
+suishen.redis.hash.mapping.test.LambdaTest$$Lambda$1/1973336893@6bf2d08e
+
+</code></pre>
+<p>生成的实例是不同的</p>
+<h3 id="总结">总结：</h3>
+<ul>
+<li>如果不存在捕获变量，每次调用生成的实例是相同的</li>
+<li>如果存在捕获变量，每次调用生成的实例是不相同的</li>
+</ul>
+<p>与猜想一致，以上。</p>
+<blockquote>
+<p><em>来自网络</em></p>
+<h1 id="lambda表达式的转换策略">Lambda表达式的转换策略</h1>
+<p>Brian Goetz是Oracle的Java语言架构师， JSR 335(Lambda Expression)规范的lead, 写了几篇Lambda设计方面的文章， 其中之一就是Translation of Lambda Expressions。这篇文章介绍了Java 8 Lambda设计时的考虑以及实现方法。</p>
+<p>他提到， Lambda表达式可以通过内部类， method handle, dynamic proxy等方式实现， 但是这些方法各有优劣。真正要实现Lambda表达式， 必须兼顾两个目标：一是不引入特定策略，以期为将来的优化提供最大的灵活性， 二是保持类文件格式的稳定。通过Java 7中引入的<strong>invokedynamic</strong> （JSR 292）, 可以很好的兼顾这两个目标。</p>
+<p><strong>invokedynamic</strong> 在缺乏静态类型信息的情况下可以支持有效的灵活的方法调用。主要是为了日益增长的运行在JVM上的动态类型语言， 如Groovy, JRuby。</p>
+<p><strong>invokedynamic</strong> 将Lambda表达式的转换策略推迟到运行时， 这也意味着我们现在编译的代码在将来的转换策略改变的情况下也能正常运行。</p>
+<p>编译器在编译的时候， 会将Lambda表达式的表达式体 (lambda body)脱糖(desugar) 成一个方法，此方法的参数列表和返回类型和lambda表达式一致， 如果有捕获参数， 脱糖的方法的参数可能会更多一些， 并会产生一个<strong>invokedynamic</strong>调用， 调用一个call site。（如果是一个方法引用的话，会进行不一样的处理，不会脱糖成静态方法，而是将方法调用写入了生成的内部类中）</p>
+<p>这个call site被调用时会返回lambda表达式的目标类型(functional interface)的一个实现类。这个call site称为这个lambda表达式的<em>lambda factory</em>。 <em>lambda factory</em>的bootstrap方法是一个标准方法， 叫做<em>lambda metafactory</em>。</p>
+<p>编译器在转换lambda表达式时， 可以推断出表达式的参数类型，返回类型以及异常， 称之为<code>natural signature</code>， 我们将目标类型的方法签名称之为<code>lambda descriptor</code>, lambda factory的返回对象实现了函数式接口， 并且关联的表达式的代码逻辑， 称之为<code>lambda object</code>。</p>
+</blockquote>
+]]></content>
+    </entry>
+    <entry>
+        <title type="html"><![CDATA[测试]]></title>
+        <id>https://shiyuesheng.github.io/post/ce-shi/</id>
+        <link href="https://shiyuesheng.github.io/post/ce-shi/">
+        </link>
+        <updated>2020-11-02T03:43:29.000Z</updated>
+        <content type="html"><![CDATA[<h3 id="北京">北京</h3>
+]]></content>
+    </entry>
     <entry>
         <title type="html"><![CDATA[《后浪》别酸了--抄录]]></title>
         <id>https://shiyuesheng.github.io/post/lesslesshou-lang-greatergreater-bie-suan-liao-chao-lu/</id>
