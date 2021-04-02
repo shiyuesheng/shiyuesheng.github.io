@@ -1,0 +1,416 @@
+<html>
+  <head>
+    <meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Lambda系列三：Lambda表达式序列化 | 玄戈大人</title>
+<link rel="shortcut icon" href="https://shiyuesheng.github.io/favicon.ico?v=1617345237039">
+<link href="https://cdn.jsdelivr.net/npm/remixicon@2.3.0/fonts/remixicon.css" rel="stylesheet">
+<link rel="stylesheet" href="https://shiyuesheng.github.io/styles/main.css">
+<link rel="alternate" type="application/atom+xml" title="Lambda系列三：Lambda表达式序列化 | 玄戈大人 - Atom Feed" href="https://shiyuesheng.github.io/atom.xml">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Droid+Serif:400,700">
+
+
+
+    <meta name="description" content="
+序列化是将对象的状态写入字节流的过程，以便我们可以通过网络传输它。**如果lambda表达式的目标类型和捕获的参数已序列化，则可以序列化该表达式。**但是，与内部类一样，强烈不建议对lambda表达式进行序列化。
+先进行总结，方便回顾，下..." />
+    <meta name="keywords" content="Lambda" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.10.0/katex.min.css">
+    <script src="https://cdn.bootcss.com/highlight.js/9.12.0/highlight.min.js"></script>
+  </head>
+  <body>
+    <div class="main">
+      <div class="main-content">
+        <div class="site-header">
+  <a href="https://shiyuesheng.github.io">
+  <img class="avatar" src="https://shiyuesheng.github.io/images/avatar.png?v=1617345237039" alt="">
+  </a>
+  <h1 class="site-title">
+    玄戈大人
+  </h1>
+  <p class="site-description">
+    垂露悬针聚墨藏锋的章法，书同南北交手相传漫天涯
+  </p>
+  <div class="menu-container">
+    
+      
+        <a href="/" class="menu">
+          首页
+        </a>
+      
+    
+      
+        <a href="/archives" class="menu">
+          归档
+        </a>
+      
+    
+      
+        <a href="/tags" class="menu">
+          标签
+        </a>
+      
+    
+      
+        <a href="/post/about" class="menu">
+          关于
+        </a>
+      
+    
+  </div>
+  <div class="social-container">
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+  </div>
+</div>
+
+        <div class="post-detail">
+          <article class="post">
+            <h2 class="post-title">
+              Lambda系列三：Lambda表达式序列化
+            </h2>
+            <div class="post-info">
+              <span>
+                2021-04-02
+              </span>
+              <span>
+                9 min read
+              </span>
+              
+                <a href="https://shiyuesheng.github.io/tag/1aXG2ZH79/" class="post-tag">
+                  # Lambda
+                </a>
+              
+            </div>
+            
+            <div class="post-content-wrapper">
+              <div class="post-content">
+                <blockquote>
+<p>序列化是将对象的状态写入字节流的过程，以便我们可以通过网络传输它。**如果lambda表达式的目标类型和捕获的参数已序列化，则可以序列化该表达式。**但是，与内部类一样，强烈不建议对lambda表达式进行序列化。</p>
+<p>先进行总结，方便回顾，下面描述的前提是支持序列化的lambda表达式。</p>
+<p>1、编译时，lambda表达式所在声明类生成一个隐藏的私有静态方法 <code>$deserializeLambda$</code>，用以反序列化。</p>
+<p>2、运行时，lambda表达式动态生成内部类class，内部类中多出 <code>readResolve()</code>方法，用以序列化。</p>
+<p>3、序列化时，lambda表达式实例调用<code>readResolve()</code>方法，返回 <strong>SerializedLambda</strong>对象。</p>
+<p>4、序列化 <strong>SerializedLambda</strong>对象 ------&gt; 反序列化 <strong>SerializedLambda</strong>对象。</p>
+<p>5、反序列化时，<strong>SerializedLambda</strong>对象调用<code>readResolve()</code>方法。</p>
+<p>6、<code>readResolve()</code>方法内部调用lambda表达式所造声明类的<code>$deserializeLambda$</code>。</p>
+<p>7、<code>$deserializeLambda$</code>内部根据<strong>SerializedLambda</strong>对象信息生成新的内部类class，实例化lambda表达式对象。</p>
+</blockquote>
+<h2 id="序列化-反序列化例子">序列化、反序列化例子</h2>
+<p>自定义一个支持序列化的函数式接口（lambda表达式支持序列化，目标接口支持序列化并不是必须的，只要最终传递的内部类对象支持序列化就可以，文章后面我们再分析）</p>
+<pre><code class="language-java">@FunctionalInterface
+public interface FunctionSerializable&lt;T, R&gt; extends Serializable {
+    R apply(T t);
+}
+</code></pre>
+<pre><code class="language-java">public class LambdaSerializeTest implements Serializable {
+
+    public Long toLong(String name) {
+        return 9527L;
+    }
+
+    public static void main(String[] args) throws IOException, ClassNotFoundException {
+        LambdaSerializeTest lambdaTest = new LambdaSerializeTest();
+        FunctionSerializable&lt;String, Long&gt; functionSerializableDemo = s -&gt; lambdaTest.toLong(s);
+
+        //序列化到文件
+        serialize(functionSerializableDemo, new FileOutputStream(&quot;functionSerializableDemo&quot;));
+
+        //反序列化
+        FunctionSerializable&lt;String, Long&gt; functionDeserializableDemo = (FunctionSerializable&lt;String, Long&gt;)
+                deserialize(new FileInputStream(&quot;functionSerializableDemo&quot;));
+        Long result = functionDeserializableDemo.apply(&quot;shiyuesheng&quot;);
+        System.out.println(result);
+    }
+
+    public static void serialize(Object obj, OutputStream out) throws IOException {
+        ObjectOutputStream objOut = new ObjectOutputStream(out);
+        objOut.writeObject(obj);
+        out.flush();
+        out.close();
+    }
+
+    public static Object deserialize(InputStream in) throws IOException, ClassNotFoundException {
+        ObjectInputStream objIn = new ObjectInputStream(in);
+        Object result = objIn.readObject();
+        objIn.close();
+        return result;
+    }
+}
+</code></pre>
+<p>一个简单的对象序列化测试用例，最终的结果是9527，说明lambda表达式正确的执行了序列化、反序列化。</p>
+<p>java对象序列化，一般都是将对象的类信息和成员变量的值记录下来，然后反序列化时，程序创建该类的一个新对象，然后将记录下来的成员变量的值赋值给这个新创建的对象。但是lambda对象的类是没有固定class文件，内部类都是动态生成的，而且每个都不一样，那么lambda对象是怎么序列化的呢？</p>
+<h3 id="在开始分析之前先提一下这两个对象序列化方法writereplace-readresolve">在开始分析之前先提一下这两个对象序列化方法：writeReplace() &amp; readResolve()</h3>
+<ul>
+<li>**序列化：<strong>如果准备序列化的类中存在</strong>writeReplace()<strong>方法，类实例并不会直接进行序列化，而是先调用</strong>writeReplace()**方法，然后序列化该方法返回的Object</li>
+<li>**反序列化：<strong>反序列化生成的Object中，如果存在</strong>readResolve()**方法，就会调用此方法，最终的序列化结果是该方法返回的Object</li>
+</ul>
+<h2 id="编译案例">编译案例</h2>
+<p>使用命令编译 javac -g LambdaSerializeTest.java</p>
+<p>使用命令查看字节码 javap -v -p LambdaSerializeTest.class</p>
+<p>这里就不贴字节码了，太长了，直接说我分析的结果：</p>
+<p>相比之前不支持序列化的lambda表达式编译结果，这次在声明类中还多了个私有静态方法<code>$deserializeLambda$</code></p>
+<p>见文知意，<code>$deserializeLambda$</code>这个肯定是用来进行lambda反序列化的，里面的逻辑很复杂，不做深究。</p>
+<h2 id="运行案例">运行案例</h2>
+<p>执行命令 java -Djdk.internal.lambda.dumpProxyClasses LambdaSerializeTest</p>
+<p>生成了两个内部类class文件 LambdaSerializeTest$$Lambda<span class="katex"><span class="katex-mathml"><math><semantics><mrow><mn>1</mn><mi mathvariant="normal">、</mi><mi>L</mi><mi>a</mi><mi>m</mi><mi>b</mi><mi>d</mi><mi>a</mi><mi>S</mi><mi>e</mi><mi>r</mi><mi>i</mi><mi>a</mi><mi>l</mi><mi>i</mi><mi>z</mi><mi>e</mi><mi>T</mi><mi>e</mi><mi>s</mi><mi>t</mi></mrow><annotation encoding="application/x-tex">1、LambdaSerializeTest</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.69444em;vertical-align:0em;"></span><span class="mord">1</span><span class="mord cjk_fallback">、</span><span class="mord mathdefault">L</span><span class="mord mathdefault">a</span><span class="mord mathdefault">m</span><span class="mord mathdefault">b</span><span class="mord mathdefault">d</span><span class="mord mathdefault">a</span><span class="mord mathdefault" style="margin-right:0.05764em;">S</span><span class="mord mathdefault">e</span><span class="mord mathdefault" style="margin-right:0.02778em;">r</span><span class="mord mathdefault">i</span><span class="mord mathdefault">a</span><span class="mord mathdefault" style="margin-right:0.01968em;">l</span><span class="mord mathdefault">i</span><span class="mord mathdefault" style="margin-right:0.04398em;">z</span><span class="mord mathdefault">e</span><span class="mord mathdefault" style="margin-right:0.13889em;">T</span><span class="mord mathdefault">e</span><span class="mord mathdefault">s</span><span class="mord mathdefault">t</span></span></span></span>$Lambda$4，而且这两个文件一模一样，第一个肯定是lambda运行时动态生成的，第二个推断是反序列化生成的，而且是一模一样，这是如何做到的呢？</p>
+<p>贴出其中一个的代码：</p>
+<pre><code class="language-java">final class LambdaSerializeTest$$Lambda$1 implements FunctionSerializable {
+    private final LambdaSerializeTest arg$1;
+
+    private LambdaSerializeTest$$Lambda$1(LambdaSerializeTest var1) {
+        this.arg$1 = var1;
+    }
+
+    private static FunctionSerializable get$Lambda(LambdaSerializeTest var0) {
+        return new LambdaSerializeTest$$Lambda$1(var0);
+    }
+
+    @Hidden
+    public Object apply(Object var1) {
+        return LambdaSerializeTest.lambda$main$f56b7046$1(this.arg$1, (String)var1);
+    }
+
+    private final Object writeReplace() {
+        return new SerializedLambda(
+        	LambdaSerializeTest.class, 
+        	&quot;suishen/redis/hash/mapping/test/FunctionSerializable&quot;, 
+        	&quot;apply&quot;, 
+        	&quot;(Ljava/lang/Object;)Ljava/lang/Object;&quot;, 
+        	6, 
+        	&quot;suishen/redis/hash/mapping/test/LambdaSerializeTest&quot;, 
+        	&quot;lambda$main$f56b7046$1&quot;, 
+        	&quot;(Lsuishen/redis/hash/mapping/test/LambdaSerializeTest;Ljava/lang/String;)Ljava/lang/Long;&quot;, 
+        	&quot;(Ljava/lang/String;)Ljava/lang/Long;&quot;, 
+        	new Object[]{this.arg$1});
+    }
+}
+</code></pre>
+<p>相比之前不支持序列化的lambda表达式运行结果，这次内部类中多了个方法<strong>writeReplace()</strong>，上面提到过，最终lambda表达式进行序列化的时候，处理的是**writeReplace()**返回的  <strong>SerializedLambda</strong> 对象。</p>
+<p>该SerializedLambda对象记录如下信息，大部分都是些符号信息，需要特别说明的是，如果存在捕获变量，也包含在<strong>SerializedLambda</strong>对象中，捕获变量也要支持序列化才能序列化成功。</p>
+<table>
+<thead>
+<tr>
+<th>参数名称</th>
+<th>参数说明</th>
+<th style="text-align:left">参数举例</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>captureClass</td>
+<td>lambda表达式所在的声明类</td>
+<td style="text-align:left">LambdaSerializeTest.class</td>
+</tr>
+<tr>
+<td>functionalInterfaceClass</td>
+<td>lambda表达式实现的函数式接口的全限定类名，斜杠分割</td>
+<td style="text-align:left">suishen/redis/hash/mapping/test/FunctionSerializable</td>
+</tr>
+<tr>
+<td>functionalInterfaceMethodName</td>
+<td>lambda表达式实现的函数式接口的方法名</td>
+<td style="text-align:left">apply</td>
+</tr>
+<tr>
+<td>functionalInterfaceMethodSignature</td>
+<td>lambda表达式实现的函数式接口的方法签名</td>
+<td style="text-align:left">(Ljava/lang/Object;)Ljava/lang/Object;</td>
+</tr>
+<tr>
+<td>implMethodKind</td>
+<td>实现方法的方法句柄种类</td>
+<td style="text-align:left">6</td>
+</tr>
+<tr>
+<td>implClass</td>
+<td>lambda表达式真正实现方法所在的类，全限定类名，斜杠分割</td>
+<td style="text-align:left">suishen/redis/hash/mapping/test/LambdaSerializeTest</td>
+</tr>
+<tr>
+<td>implMethodName</td>
+<td>lambda表达式真正实现方法名称</td>
+<td style="text-align:left">lambda<span class="katex"><span class="katex-mathml"><math><semantics><mrow><mi>m</mi><mi>a</mi><mi>i</mi><mi>n</mi></mrow><annotation encoding="application/x-tex">main</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.65952em;vertical-align:0em;"></span><span class="mord mathdefault">m</span><span class="mord mathdefault">a</span><span class="mord mathdefault">i</span><span class="mord mathdefault">n</span></span></span></span>f56b7046$1</td>
+</tr>
+<tr>
+<td>implMethodSignature</td>
+<td>lambda表达式真正实现方法签名</td>
+<td style="text-align:left">(Lsuishen/redis/hash/mapping/test/LambdaSerializeTest;Ljava/lang/String;)Ljava/lang/Long;</td>
+</tr>
+<tr>
+<td>InstantiatedMethodType</td>
+<td>范型变量替换为从捕获点实例化后的函数式接口方法的签名，例：FunctionSerializable&lt;String, Long&gt;</td>
+<td style="text-align:left">(Ljava/lang/String;)Ljava/lang/Long;</td>
+</tr>
+<tr>
+<td>captureArgs</td>
+<td>lambda捕获的变量，这里的变量得支持序列化</td>
+<td style="text-align:left">new Object[]{this.arg$1})</td>
+</tr>
+</tbody>
+</table>
+<h2 id="serializedlambda">SerializedLambda</h2>
+<p>java.lang.invoke.SerializedLambda，这个类并不复杂，除了构造器，其余的就是对各种属性的获取、转换。</p>
+<p>但是有一个特殊的方法，<strong>readResolve()</strong></p>
+<pre><code class="language-java">private Object readResolve() throws ReflectiveOperationException {
+    try {
+        Method deserialize = AccessController.doPrivileged(new PrivilegedExceptionAction&lt;Method&gt;() {
+            @Override
+            public Method run() throws Exception {
+                Method m = capturingClass.getDeclaredMethod(&quot;$deserializeLambda$&quot;, SerializedLambda.class);
+                m.setAccessible(true);
+                return m;
+            }
+        });
+
+        return deserialize.invoke(null, this);
+    }
+    catch (PrivilegedActionException e) {
+        Exception cause = e.getException();
+        if (cause instanceof ReflectiveOperationException)
+            throw (ReflectiveOperationException) cause;
+        else if (cause instanceof RuntimeException)
+            throw (RuntimeException) cause;
+        else
+            throw new RuntimeException(&quot;Exception in SerializedLambda.readResolve&quot;, e);
+    }
+}
+</code></pre>
+<p>到这就明白了些，最终SerializedLambda进行反序列化时，是通过**readResolve()**方法返回的lambda表达式实例。</p>
+<p><code>Method m = capturingClass.getDeclaredMethod(&quot;$deserializeLambda$&quot;, SerializedLambda.class);</code></p>
+<p>最终是调用的lambda表达式所在声明类的 <strong><span class="katex"><span class="katex-mathml"><math><semantics><mrow><mi>d</mi><mi>e</mi><mi>s</mi><mi>e</mi><mi>r</mi><mi>i</mi><mi>a</mi><mi>l</mi><mi>i</mi><mi>z</mi><mi>e</mi><mi>L</mi><mi>a</mi><mi>m</mi><mi>b</mi><mi>d</mi><mi>a</mi></mrow><annotation encoding="application/x-tex">deserializeLambda</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.69444em;vertical-align:0em;"></span><span class="mord mathdefault">d</span><span class="mord mathdefault">e</span><span class="mord mathdefault">s</span><span class="mord mathdefault">e</span><span class="mord mathdefault" style="margin-right:0.02778em;">r</span><span class="mord mathdefault">i</span><span class="mord mathdefault">a</span><span class="mord mathdefault" style="margin-right:0.01968em;">l</span><span class="mord mathdefault">i</span><span class="mord mathdefault" style="margin-right:0.04398em;">z</span><span class="mord mathdefault">e</span><span class="mord mathdefault">L</span><span class="mord mathdefault">a</span><span class="mord mathdefault">m</span><span class="mord mathdefault">b</span><span class="mord mathdefault">d</span><span class="mord mathdefault">a</span></span></span></span></strong> 方法，这个方法在编译时就已经生成了。</p>
+<p>在这个方法中，会对SerializedLambda信息进行校验，校验正确，程序会调用invokeDynamic指令生成代表lambda的内部类class，也就是上面提到的多出来的 <strong>LambdaSerializeTest$$Lambda$4</strong>， 并且创建该内部类的对象，然后返回作为反序列化的最终对象。</p>
+<p>能力有限，里面的机制细节就不深究了。</p>
+<p>以上。</p>
+<h2 id="另一种支持序列化的方式">另一种支持序列化的方式</h2>
+<p><code>Function&lt;String, Long&gt; functionSerializableDemo = (Function&lt;String, Long&gt; &amp; Serializable)s -&gt; s -&gt; lambdaTest.toLong(s)};</code></p>
+<p>最终生成的内部类长这个样子，实现了Serializable接口，writeReplace()方法。</p>
+<pre><code class="language-java">final class LambdaSerializeTest$$Lambda$1 implements Function, Serializable {
+    private final LambdaSerializeTest arg$1;
+
+    private LambdaSerializeTest$$Lambda$1(LambdaSerializeTest var1) {
+        this.arg$1 = var1;
+    }
+
+    private static Function get$Lambda(LambdaSerializeTest var0) {
+        return new LambdaSerializeTest$$Lambda$1(var0);
+    }
+
+    @Hidden
+    public Object apply(Object var1) {
+        return LambdaSerializeTest.lambda$main$939380a7$1(this.arg$1, (String)var1);
+    }
+
+    private final Object writeReplace() {
+        return new SerializedLambda(
+          LambdaSerializeTest.class, 
+          &quot;java/util/function/Function&quot;, 
+          &quot;apply&quot;,
+          &quot;(Ljava/lang/Object;)Ljava/lang/Object;&quot;, 
+          6, 
+          &quot;suishen/redis/hash/mapping/test/LambdaSerializeTest&quot;, 
+          &quot;lambda$main$939380a7$1&quot;, 
+          &quot;(Lsuishen/redis/hash/mapping/test/LambdaSerializeTest;Ljava/lang/String;)Ljava/lang/Long;&quot;, 
+          &quot;(Ljava/lang/String;)Ljava/lang/Long;&quot;, 
+          new Object[]{this.arg$1});
+    }
+}
+</code></pre>
+
+              </div>
+              <div class="toc-container">
+                <ul class="markdownIt-TOC">
+<li>
+<ul>
+<li><a href="#%E5%BA%8F%E5%88%97%E5%8C%96-%E5%8F%8D%E5%BA%8F%E5%88%97%E5%8C%96%E4%BE%8B%E5%AD%90">序列化、反序列化例子</a>
+<ul>
+<li><a href="#%E5%9C%A8%E5%BC%80%E5%A7%8B%E5%88%86%E6%9E%90%E4%B9%8B%E5%89%8D%E5%85%88%E6%8F%90%E4%B8%80%E4%B8%8B%E8%BF%99%E4%B8%A4%E4%B8%AA%E5%AF%B9%E8%B1%A1%E5%BA%8F%E5%88%97%E5%8C%96%E6%96%B9%E6%B3%95writereplace-readresolve">在开始分析之前先提一下这两个对象序列化方法：writeReplace() &amp; readResolve()</a></li>
+</ul>
+</li>
+<li><a href="#%E7%BC%96%E8%AF%91%E6%A1%88%E4%BE%8B">编译案例</a></li>
+<li><a href="#%E8%BF%90%E8%A1%8C%E6%A1%88%E4%BE%8B">运行案例</a></li>
+<li><a href="#serializedlambda">SerializedLambda</a></li>
+<li><a href="#%E5%8F%A6%E4%B8%80%E7%A7%8D%E6%94%AF%E6%8C%81%E5%BA%8F%E5%88%97%E5%8C%96%E7%9A%84%E6%96%B9%E5%BC%8F">另一种支持序列化的方式</a></li>
+</ul>
+</li>
+</ul>
+
+              </div>
+            </div>
+          </article>
+        </div>
+
+        
+          <div class="next-post">
+            <div class="next">下一篇</div>
+            <a href="https://shiyuesheng.github.io/post/fang-fa-yin-yong-bei-bian-yi-cheng-liao-shi-me/">
+              <h3 class="post-title">
+                Lambda系列二：方法引用被编译成了什么
+              </h3>
+            </a>
+          </div>
+        
+
+        
+
+        <div class="site-footer">
+  Powered by <a href="https://github.com/getgridea/gridea" target="_blank">Gridea</a>
+  <a class="rss" href="https://shiyuesheng.github.io/atom.xml" target="_blank">
+    <i class="ri-rss-line"></i> RSS
+  </a>
+</div>
+
+      </div>
+    </div>
+
+    <script>
+      hljs.initHighlightingOnLoad()
+
+      let mainNavLinks = document.querySelectorAll(".markdownIt-TOC a");
+
+      // This should probably be throttled.
+      // Especially because it triggers during smooth scrolling.
+      // https://lodash.com/docs/4.17.10#throttle
+      // You could do like...
+      // window.addEventListener("scroll", () => {
+      //    _.throttle(doThatStuff, 100);
+      // });
+      // Only not doing it here to keep this Pen dependency-free.
+
+      window.addEventListener("scroll", event => {
+        let fromTop = window.scrollY;
+
+        mainNavLinks.forEach((link, index) => {
+          let section = document.getElementById(decodeURI(link.hash).substring(1));
+          let nextSection = null
+          if (mainNavLinks[index + 1]) {
+            nextSection = document.getElementById(decodeURI(mainNavLinks[index + 1].hash).substring(1));
+          }
+          if (section.offsetTop <= fromTop) {
+            if (nextSection) {
+              if (nextSection.offsetTop > fromTop) {
+                link.classList.add("current");
+              } else {
+                link.classList.remove("current");    
+              }
+            } else {
+              link.classList.add("current");
+            }
+          } else {
+            link.classList.remove("current");
+          }
+        });
+      });
+
+    </script>
+  </body>
+</html>
