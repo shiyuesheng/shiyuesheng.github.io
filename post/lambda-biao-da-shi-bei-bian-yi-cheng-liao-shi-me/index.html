@@ -1,20 +1,13 @@
-<!DOCTYPE html>
 <html>
   <head>
-    <meta charset="utf-8" >
-
+    <meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>Lambda系列一：Lambda表达式被编译成了什么 | 玄戈大人</title>
-
-<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
-
-<link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.7.2/css/all.css" integrity="sha384-fnmOCqbTlWIlj8LyTjo7mOUStjsKC4pOpQbqyi7RrhN7udi9RwhKkMHpvLbHG9Sr" crossorigin="anonymous">
-<link rel="shortcut icon" href="https://shiyuesheng.github.io/favicon.ico?v=1619362761380">
+<link rel="shortcut icon" href="https://shiyuesheng.github.io/favicon.ico?v=1619362927441">
+<link href="https://cdn.jsdelivr.net/npm/remixicon@2.3.0/fonts/remixicon.css" rel="stylesheet">
 <link rel="stylesheet" href="https://shiyuesheng.github.io/styles/main.css">
-
-
-
-<link rel="stylesheet" href="https://unpkg.com/aos@next/dist/aos.css" />
-<script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js"></script>
+<link rel="alternate" type="application/atom+xml" title="Lambda系列一：Lambda表达式被编译成了什么 | 玄戈大人 - Atom Feed" href="https://shiyuesheng.github.io/atom.xml">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Droid+Serif:400,700">
 
 
 
@@ -32,81 +25,86 @@ Lambda表达式会在当前的声明类中生成一个私有静态方法， 方�
 
 生成invokedynamic指令， 调用bootstra..." />
     <meta name="keywords" content="Lambda" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.10.0/katex.min.css">
+    <script src="https://cdn.bootcss.com/highlight.js/9.12.0/highlight.min.js"></script>
   </head>
   <body>
-    <div id="app" class="main">
-
-      <div class="sidebar" :class="{ 'full-height': menuVisible }">
-  <div class="top-container" data-aos="fade-right">
-    <div class="top-header-container">
-      <a class="site-title-container" href="https://shiyuesheng.github.io">
-        <img src="https://shiyuesheng.github.io/images/avatar.png?v=1619362761380" class="site-logo">
-        <h1 class="site-title">玄戈大人</h1>
-      </a>
-      <div class="menu-btn" @click="menuVisible = !menuVisible">
-        <div class="line"></div>
-      </div>
-    </div>
-    <div>
+    <div class="main">
+      <div class="main-content">
+        <div class="site-header">
+  <a href="https://shiyuesheng.github.io">
+  <img class="avatar" src="https://shiyuesheng.github.io/images/avatar.png?v=1619362927441" alt="">
+  </a>
+  <h1 class="site-title">
+    玄戈大人
+  </h1>
+  <p class="site-description">
+    垂露悬针聚墨藏锋的章法，书同南北交手相传漫天涯
+  </p>
+  <div class="menu-container">
+    
       
-        
-          <a href="/" class="site-nav">
-            首页
-          </a>
-        
+        <a href="/" class="menu">
+          首页
+        </a>
       
-        
-          <a href="/archives" class="site-nav">
-            归档
-          </a>
-        
+    
       
-        
-          <a href="/tags" class="site-nav">
-            标签
-          </a>
-        
+        <a href="/archives" class="menu">
+          归档
+        </a>
       
-        
-          <a href="/post/about" class="site-nav">
-            关于
-          </a>
-        
+    
       
-    </div>
+        <a href="/tags" class="menu">
+          标签
+        </a>
+      
+    
+      
+        <a href="/post/about" class="menu">
+          关于
+        </a>
+      
+    
   </div>
-  <div class="bottom-container" data-aos="flip-up" data-aos-offset="0">
-    <div class="social-container">
+  <div class="social-container">
+    
       
-        
+    
       
-        
+    
       
-        
+    
       
-        
+    
       
-        
-      
-    </div>
-    <div class="site-description">
-      垂露悬针聚墨藏锋的章法，书同南北交手相传漫天涯
-    </div>
-    <div class="site-footer">
-      Powered by <a href="https://github.com/getgridea/gridea" target="_blank">Gridea</a> | <a class="rss" href="https://shiyuesheng.github.io/atom.xml" target="_blank">RSS</a>
-    </div>
+    
   </div>
 </div>
 
-
-      <div class="main-container">
-        <div class="content-container" data-aos="fade-up">
-          <div class="post-detail">
-            <h2 class="post-title">Lambda系列一：Lambda表达式被编译成了什么</h2>
-            <div class="post-date">2021-04-02</div>
+        <div class="post-detail">
+          <article class="post">
+            <h2 class="post-title">
+              Lambda系列一：Lambda表达式被编译成了什么
+            </h2>
+            <div class="post-info">
+              <span>
+                2021-04-02
+              </span>
+              <span>
+                13 min read
+              </span>
+              
+                <a href="https://shiyuesheng.github.io/tag/1aXG2ZH79/" class="post-tag">
+                  # Lambda
+                </a>
+              
+            </div>
             
-            <div class="post-content" v-pre>
-              <h1 id="lambda表达式被编译成了什么">Lambda表达式被编译成了什么</h1>
+            <div class="post-content-wrapper">
+              <div class="post-content">
+                <h1 id="lambda表达式被编译成了什么">Lambda表达式被编译成了什么</h1>
 <blockquote>
 <p>先进行总结，方便回顾：</p>
 <ul>
@@ -402,53 +400,110 @@ suishen.redis.hash.mapping.test.LambdaTest$$Lambda$1/1973336893@6bf2d08e
 <p>编译器在转换lambda表达式时， 可以推断出表达式的参数类型，返回类型以及异常， 称之为<code>natural signature</code>， 我们将目标类型的方法签名称之为<code>lambda descriptor</code>, lambda factory的返回对象实现了函数式接口， 并且关联的表达式的代码逻辑， 称之为<code>lambda object</code>。</p>
 </blockquote>
 
+              </div>
+              <div class="toc-container">
+                <ul class="markdownIt-TOC">
+<li><a href="#lambda%E8%A1%A8%E8%BE%BE%E5%BC%8F%E8%A2%AB%E7%BC%96%E8%AF%91%E6%88%90%E4%BA%86%E4%BB%80%E4%B9%88">Lambda表达式被编译成了什么</a>
+<ul>
+<li><a href="#%E4%B8%80%E4%B8%AA%E7%AE%80%E5%8D%95%E7%9A%84%E4%BE%8B%E5%AD%90">一个简单的例子</a>
+<ul>
+<li><a href="#invokedynamic-%E6%8C%87%E4%BB%A4">invokedynamic 指令</a></li>
+<li><a href="#%E7%A7%81%E6%9C%89%E9%9D%99%E6%80%81%E6%96%B9%E6%B3%95">私有静态方法</a></li>
+</ul>
+</li>
+<li><a href="#%E8%BF%90%E8%A1%8Clambda">运行Lambda</a></li>
+<li><a href="#%E6%8D%95%E8%8E%B7%E5%8F%98%E9%87%8F%E7%9A%84%E4%BE%8B%E5%AD%90">捕获变量的例子</a>
+<ul>
+<li><a href="#%E7%A7%81%E6%9C%89%E9%9D%99%E6%80%81%E6%96%B9%E6%B3%95-2">私有静态方法</a></li>
+<li><a href="#%E5%86%85%E9%83%A8%E7%B1%BB">内部类</a></li>
+</ul>
+</li>
+<li><a href="#%E9%87%8D%E5%A4%8D%E7%9A%84lambda%E8%A1%A8%E8%BE%BE%E5%BC%8F">重复的Lambda表达式</a>
+<ul>
+<li><a href="#%E5%A4%9A%E4%B8%AA%E9%95%BF%E5%BE%97%E4%B8%80%E6%A0%B7%E7%9A%84lambda%E8%A1%A8%E8%BE%BE%E5%BC%8F">多个长得一样的lambda表达式</a></li>
+<li><a href="#%E5%BE%AA%E7%8E%AF%E5%90%8C%E4%B8%80%E4%B8%AAlambda%E8%A1%A8%E8%BE%BE%E5%BC%8F">循环同一个lambda表达式</a></li>
+</ul>
+</li>
+<li><a href="#%E6%B5%8B%E8%AF%95%E7%94%9F%E6%88%90%E7%9A%84%E5%AE%9E%E4%BE%8B%E6%98%AF%E5%90%A6%E7%9B%B8%E5%90%8C">测试生成的实例是否相同</a>
+<ul>
+<li><a href="#%E4%B8%8D%E5%AD%98%E5%9C%A8%E6%8D%95%E8%8E%B7%E5%8F%98%E9%87%8F">不存在捕获变量</a></li>
+<li><a href="#%E5%AD%98%E5%9C%A8%E6%8D%95%E8%8E%B7%E5%8F%98%E9%87%8F">存在捕获变量</a></li>
+<li><a href="#%E5%AD%98%E5%9C%A8%E6%8D%95%E8%8E%B7%E5%8F%98%E9%87%8F%E6%8D%95%E8%8E%B7%E5%8F%98%E9%87%8F%E6%98%AF%E7%B1%BB%E7%9A%84%E9%9D%99%E6%80%81%E5%B1%9E%E6%80%A7">存在捕获变量，捕获变量是类的静态属性</a></li>
+<li><a href="#%E6%80%BB%E7%BB%93">总结：</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li><a href="#lambda%E8%A1%A8%E8%BE%BE%E5%BC%8F%E7%9A%84%E8%BD%AC%E6%8D%A2%E7%AD%96%E7%95%A5">Lambda表达式的转换策略</a></li>
+</ul>
+
+              </div>
             </div>
-            
-              <div class="tag-container">
-                
-                  <a href="https://shiyuesheng.github.io/tag/1aXG2ZH79/" class="tag">
-                    Lambda
-                  </a>
-                
-              </div>
-            
-            
-              <div class="next-post">
-                <div class="next">下一篇</div>
-                <a href="https://shiyuesheng.github.io/post/ce-shi/">
-                  <h3 class="post-title">
-                    测试
-                  </h3>
-                </a>
-              </div>
-            
-
-            
-
-          </div>
-
+          </article>
         </div>
+
+        
+          <div class="next-post">
+            <div class="next">下一篇</div>
+            <a href="https://shiyuesheng.github.io/post/ce-shi/">
+              <h3 class="post-title">
+                测试
+              </h3>
+            </a>
+          </div>
+        
+
+        
+
+        <div class="site-footer">
+  Powered by <a href="https://github.com/getgridea/gridea" target="_blank">Gridea</a>
+  <a class="rss" href="https://shiyuesheng.github.io/atom.xml" target="_blank">
+    <i class="ri-rss-line"></i> RSS
+  </a>
+</div>
+
       </div>
     </div>
 
-    <script src="https://unpkg.com/aos@next/dist/aos.js"></script>
-<script type="application/javascript">
+    <script>
+      hljs.initHighlightingOnLoad()
 
-AOS.init();
+      let mainNavLinks = document.querySelectorAll(".markdownIt-TOC a");
 
-var app = new Vue({
-  el: '#app',
-  data: {
-    menuVisible: false,
-  },
-})
+      // This should probably be throttled.
+      // Especially because it triggers during smooth scrolling.
+      // https://lodash.com/docs/4.17.10#throttle
+      // You could do like...
+      // window.addEventListener("scroll", () => {
+      //    _.throttle(doThatStuff, 100);
+      // });
+      // Only not doing it here to keep this Pen dependency-free.
 
-</script>
+      window.addEventListener("scroll", event => {
+        let fromTop = window.scrollY;
 
+        mainNavLinks.forEach((link, index) => {
+          let section = document.getElementById(decodeURI(link.hash).substring(1));
+          let nextSection = null
+          if (mainNavLinks[index + 1]) {
+            nextSection = document.getElementById(decodeURI(mainNavLinks[index + 1].hash).substring(1));
+          }
+          if (section.offsetTop <= fromTop) {
+            if (nextSection) {
+              if (nextSection.offsetTop > fromTop) {
+                link.classList.add("current");
+              } else {
+                link.classList.remove("current");    
+              }
+            } else {
+              link.classList.add("current");
+            }
+          } else {
+            link.classList.remove("current");
+          }
+        });
+      });
 
-
-
-
-
+    </script>
   </body>
 </html>

@@ -1,20 +1,13 @@
-<!DOCTYPE html>
 <html>
   <head>
-    <meta charset="utf-8" >
-
+    <meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>代理精进系列八：Cglib动态代理原理（一） | 玄戈大人</title>
-
-<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
-
-<link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.7.2/css/all.css" integrity="sha384-fnmOCqbTlWIlj8LyTjo7mOUStjsKC4pOpQbqyi7RrhN7udi9RwhKkMHpvLbHG9Sr" crossorigin="anonymous">
-<link rel="shortcut icon" href="https://shiyuesheng.github.io/favicon.ico?v=1619362761380">
+<link rel="shortcut icon" href="https://shiyuesheng.github.io/favicon.ico?v=1619362927441">
+<link href="https://cdn.jsdelivr.net/npm/remixicon@2.3.0/fonts/remixicon.css" rel="stylesheet">
 <link rel="stylesheet" href="https://shiyuesheng.github.io/styles/main.css">
-
-
-
-<link rel="stylesheet" href="https://unpkg.com/aos@next/dist/aos.css" />
-<script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js"></script>
+<link rel="alternate" type="application/atom+xml" title="代理精进系列八：Cglib动态代理原理（一） | 玄戈大人 - Atom Feed" href="https://shiyuesheng.github.io/atom.xml">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Droid+Serif:400,700">
 
 
 
@@ -22,81 +15,86 @@
 
 通过之前的学习了解到，cglib可以为普通类、接口类创建代理，可以在拦截到的方法上面设置不同的回调，在回调中可以植入增强逻辑，甚至可以修改传入参数，修改返回参数，控制是否继续调用被代理类的真实方法，对被代理类..." />
     <meta name="keywords" content="代理" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.10.0/katex.min.css">
+    <script src="https://cdn.bootcss.com/highlight.js/9.12.0/highlight.min.js"></script>
   </head>
   <body>
-    <div id="app" class="main">
-
-      <div class="sidebar" :class="{ 'full-height': menuVisible }">
-  <div class="top-container" data-aos="fade-right">
-    <div class="top-header-container">
-      <a class="site-title-container" href="https://shiyuesheng.github.io">
-        <img src="https://shiyuesheng.github.io/images/avatar.png?v=1619362761380" class="site-logo">
-        <h1 class="site-title">玄戈大人</h1>
-      </a>
-      <div class="menu-btn" @click="menuVisible = !menuVisible">
-        <div class="line"></div>
-      </div>
-    </div>
-    <div>
+    <div class="main">
+      <div class="main-content">
+        <div class="site-header">
+  <a href="https://shiyuesheng.github.io">
+  <img class="avatar" src="https://shiyuesheng.github.io/images/avatar.png?v=1619362927441" alt="">
+  </a>
+  <h1 class="site-title">
+    玄戈大人
+  </h1>
+  <p class="site-description">
+    垂露悬针聚墨藏锋的章法，书同南北交手相传漫天涯
+  </p>
+  <div class="menu-container">
+    
       
-        
-          <a href="/" class="site-nav">
-            首页
-          </a>
-        
+        <a href="/" class="menu">
+          首页
+        </a>
       
-        
-          <a href="/archives" class="site-nav">
-            归档
-          </a>
-        
+    
       
-        
-          <a href="/tags" class="site-nav">
-            标签
-          </a>
-        
+        <a href="/archives" class="menu">
+          归档
+        </a>
       
-        
-          <a href="/post/about" class="site-nav">
-            关于
-          </a>
-        
+    
       
-    </div>
+        <a href="/tags" class="menu">
+          标签
+        </a>
+      
+    
+      
+        <a href="/post/about" class="menu">
+          关于
+        </a>
+      
+    
   </div>
-  <div class="bottom-container" data-aos="flip-up" data-aos-offset="0">
-    <div class="social-container">
+  <div class="social-container">
+    
       
-        
+    
       
-        
+    
       
-        
+    
       
-        
+    
       
-        
-      
-    </div>
-    <div class="site-description">
-      垂露悬针聚墨藏锋的章法，书同南北交手相传漫天涯
-    </div>
-    <div class="site-footer">
-      Powered by <a href="https://github.com/getgridea/gridea" target="_blank">Gridea</a> | <a class="rss" href="https://shiyuesheng.github.io/atom.xml" target="_blank">RSS</a>
-    </div>
+    
   </div>
 </div>
 
-
-      <div class="main-container">
-        <div class="content-container" data-aos="fade-up">
-          <div class="post-detail">
-            <h2 class="post-title">代理精进系列八：Cglib动态代理原理（一）</h2>
-            <div class="post-date">2021-04-25</div>
+        <div class="post-detail">
+          <article class="post">
+            <h2 class="post-title">
+              代理精进系列八：Cglib动态代理原理（一）
+            </h2>
+            <div class="post-info">
+              <span>
+                2021-04-25
+              </span>
+              <span>
+                19 min read
+              </span>
+              
+                <a href="https://shiyuesheng.github.io/tag/mcczt0zHk/" class="post-tag">
+                  # 代理
+                </a>
+              
+            </div>
             
-            <div class="post-content" v-pre>
-              <h1 id="cglib动态代理原理一">Cglib动态代理原理（一）</h1>
+            <div class="post-content-wrapper">
+              <div class="post-content">
+                <h1 id="cglib动态代理原理一">Cglib动态代理原理（一）</h1>
 <blockquote>
 <p>通过之前的学习了解到，cglib可以为普通类、接口类创建代理，可以在拦截到的方法上面设置不同的回调，在回调中可以植入增强逻辑，甚至可以修改传入参数，修改返回参数，控制是否继续调用被代理类的真实方法，对被代理类实例进行延迟加载等等。</p>
 <p>这些功能的原理就是通过ASM字节码工具动态的为普通类、接口类生成一个新的代理类，该代理类继承了被代理类，是一个子类；该代理类实现了被代理的方法。</p>
@@ -731,53 +729,87 @@ public class MethodProxy {
 <h2 id="总结">总结</h2>
 <p>这次通过最通用的MethodInterceptor为引，对Enhancer增强的代理类的运作原理进行了简单的分析。向之前提到的一些特殊的CallBack，殊途同归，就不把分析过程贴上来了，感兴趣的同学可以按照上面的模板进行调试，要比这个MethodInterceptor情况更加简单，引文很多类型的CallBack根本不需要MethodProxy。</p>
 
+              </div>
+              <div class="toc-container">
+                <ul class="markdownIt-TOC">
+<li><a href="#cglib%E5%8A%A8%E6%80%81%E4%BB%A3%E7%90%86%E5%8E%9F%E7%90%86%E4%B8%80">Cglib动态代理原理（一）</a><br>
+*
+<ul>
+<li><a href="#%E7%9B%AE%E6%A0%87%E7%B1%BB-%E8%A2%AB%E4%BB%A3%E7%90%86%E7%B1%BB">目标类-被代理类</a></li>
+<li><a href="#%E6%B5%8B%E8%AF%95%E4%BB%A3%E7%A0%81">测试代码</a></li>
+<li><a href="#methodproxy%E6%BA%90%E7%A0%81">MethodProxy源码</a></li>
+<li><a href="#%E6%80%BB%E7%BB%93">总结</a></li>
+</ul>
+</li>
+</ul>
+
+              </div>
             </div>
-            
-              <div class="tag-container">
-                
-                  <a href="https://shiyuesheng.github.io/tag/mcczt0zHk/" class="tag">
-                    代理
-                  </a>
-                
-              </div>
-            
-            
-              <div class="next-post">
-                <div class="next">下一篇</div>
-                <a href="https://shiyuesheng.github.io/post/dai-li-jing-jin-xi-lie-qi-cglib-fastclass-ji-zhi/">
-                  <h3 class="post-title">
-                    代理精进系列七：Cglib FastClass机制
-                  </h3>
-                </a>
-              </div>
-            
-
-            
-
-          </div>
-
+          </article>
         </div>
+
+        
+          <div class="next-post">
+            <div class="next">下一篇</div>
+            <a href="https://shiyuesheng.github.io/post/dai-li-jing-jin-xi-lie-qi-cglib-fastclass-ji-zhi/">
+              <h3 class="post-title">
+                代理精进系列七：Cglib FastClass机制
+              </h3>
+            </a>
+          </div>
+        
+
+        
+
+        <div class="site-footer">
+  Powered by <a href="https://github.com/getgridea/gridea" target="_blank">Gridea</a>
+  <a class="rss" href="https://shiyuesheng.github.io/atom.xml" target="_blank">
+    <i class="ri-rss-line"></i> RSS
+  </a>
+</div>
+
       </div>
     </div>
 
-    <script src="https://unpkg.com/aos@next/dist/aos.js"></script>
-<script type="application/javascript">
+    <script>
+      hljs.initHighlightingOnLoad()
 
-AOS.init();
+      let mainNavLinks = document.querySelectorAll(".markdownIt-TOC a");
 
-var app = new Vue({
-  el: '#app',
-  data: {
-    menuVisible: false,
-  },
-})
+      // This should probably be throttled.
+      // Especially because it triggers during smooth scrolling.
+      // https://lodash.com/docs/4.17.10#throttle
+      // You could do like...
+      // window.addEventListener("scroll", () => {
+      //    _.throttle(doThatStuff, 100);
+      // });
+      // Only not doing it here to keep this Pen dependency-free.
 
-</script>
+      window.addEventListener("scroll", event => {
+        let fromTop = window.scrollY;
 
+        mainNavLinks.forEach((link, index) => {
+          let section = document.getElementById(decodeURI(link.hash).substring(1));
+          let nextSection = null
+          if (mainNavLinks[index + 1]) {
+            nextSection = document.getElementById(decodeURI(mainNavLinks[index + 1].hash).substring(1));
+          }
+          if (section.offsetTop <= fromTop) {
+            if (nextSection) {
+              if (nextSection.offsetTop > fromTop) {
+                link.classList.add("current");
+              } else {
+                link.classList.remove("current");    
+              }
+            } else {
+              link.classList.add("current");
+            }
+          } else {
+            link.classList.remove("current");
+          }
+        });
+      });
 
-
-
-
-
+    </script>
   </body>
 </html>

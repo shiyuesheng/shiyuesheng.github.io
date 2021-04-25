@@ -1,20 +1,13 @@
-<!DOCTYPE html>
 <html>
   <head>
-    <meta charset="utf-8" >
-
+    <meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>Method运行原理 | 玄戈大人</title>
-
-<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
-
-<link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.7.2/css/all.css" integrity="sha384-fnmOCqbTlWIlj8LyTjo7mOUStjsKC4pOpQbqyi7RrhN7udi9RwhKkMHpvLbHG9Sr" crossorigin="anonymous">
-<link rel="shortcut icon" href="https://shiyuesheng.github.io/favicon.ico?v=1619362761380">
+<link rel="shortcut icon" href="https://shiyuesheng.github.io/favicon.ico?v=1619362927441">
+<link href="https://cdn.jsdelivr.net/npm/remixicon@2.3.0/fonts/remixicon.css" rel="stylesheet">
 <link rel="stylesheet" href="https://shiyuesheng.github.io/styles/main.css">
-
-
-
-<link rel="stylesheet" href="https://unpkg.com/aos@next/dist/aos.css" />
-<script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js"></script>
+<link rel="alternate" type="application/atom+xml" title="Method运行原理 | 玄戈大人 - Atom Feed" href="https://shiyuesheng.github.io/atom.xml">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Droid+Serif:400,700">
 
 
 
@@ -23,81 +16,86 @@
 这次彻底的梳理下Method从哪里来，invoke内部又是如何调用的，了解了内部的原理后，对我们有什么启发，又或者在今后的使用中可以清醒的意识到其中的坑点，避免错误使用，或者线上出现问题能迅速的联想到这里。
 我们开始..." />
     <meta name="keywords" content="反射" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.10.0/katex.min.css">
+    <script src="https://cdn.bootcss.com/highlight.js/9.12.0/highlight.min.js"></script>
   </head>
   <body>
-    <div id="app" class="main">
-
-      <div class="sidebar" :class="{ 'full-height': menuVisible }">
-  <div class="top-container" data-aos="fade-right">
-    <div class="top-header-container">
-      <a class="site-title-container" href="https://shiyuesheng.github.io">
-        <img src="https://shiyuesheng.github.io/images/avatar.png?v=1619362761380" class="site-logo">
-        <h1 class="site-title">玄戈大人</h1>
-      </a>
-      <div class="menu-btn" @click="menuVisible = !menuVisible">
-        <div class="line"></div>
-      </div>
-    </div>
-    <div>
+    <div class="main">
+      <div class="main-content">
+        <div class="site-header">
+  <a href="https://shiyuesheng.github.io">
+  <img class="avatar" src="https://shiyuesheng.github.io/images/avatar.png?v=1619362927441" alt="">
+  </a>
+  <h1 class="site-title">
+    玄戈大人
+  </h1>
+  <p class="site-description">
+    垂露悬针聚墨藏锋的章法，书同南北交手相传漫天涯
+  </p>
+  <div class="menu-container">
+    
       
-        
-          <a href="/" class="site-nav">
-            首页
-          </a>
-        
+        <a href="/" class="menu">
+          首页
+        </a>
       
-        
-          <a href="/archives" class="site-nav">
-            归档
-          </a>
-        
+    
       
-        
-          <a href="/tags" class="site-nav">
-            标签
-          </a>
-        
+        <a href="/archives" class="menu">
+          归档
+        </a>
       
-        
-          <a href="/post/about" class="site-nav">
-            关于
-          </a>
-        
+    
       
-    </div>
+        <a href="/tags" class="menu">
+          标签
+        </a>
+      
+    
+      
+        <a href="/post/about" class="menu">
+          关于
+        </a>
+      
+    
   </div>
-  <div class="bottom-container" data-aos="flip-up" data-aos-offset="0">
-    <div class="social-container">
+  <div class="social-container">
+    
       
-        
+    
       
-        
+    
       
-        
+    
       
-        
+    
       
-        
-      
-    </div>
-    <div class="site-description">
-      垂露悬针聚墨藏锋的章法，书同南北交手相传漫天涯
-    </div>
-    <div class="site-footer">
-      Powered by <a href="https://github.com/getgridea/gridea" target="_blank">Gridea</a> | <a class="rss" href="https://shiyuesheng.github.io/atom.xml" target="_blank">RSS</a>
-    </div>
+    
   </div>
 </div>
 
-
-      <div class="main-container">
-        <div class="content-container" data-aos="fade-up">
-          <div class="post-detail">
-            <h2 class="post-title">Method运行原理</h2>
-            <div class="post-date">2021-04-25</div>
+        <div class="post-detail">
+          <article class="post">
+            <h2 class="post-title">
+              Method运行原理
+            </h2>
+            <div class="post-info">
+              <span>
+                2021-04-25
+              </span>
+              <span>
+                13 min read
+              </span>
+              
+                <a href="https://shiyuesheng.github.io/tag/HUkMjpiFt/" class="post-tag">
+                  # 反射
+                </a>
+              
+            </div>
             
-            <div class="post-content" v-pre>
-              <h1 id="method运行原理">Method运行原理</h1>
+            <div class="post-content-wrapper">
+              <div class="post-content">
+                <h1 id="method运行原理">Method运行原理</h1>
 <blockquote>
 <p>这次彻底的梳理下Method从哪里来，invoke内部又是如何调用的，了解了内部的原理后，对我们有什么启发，又或者在今后的使用中可以清醒的意识到其中的坑点，避免错误使用，或者线上出现问题能迅速的联想到这里。</p>
 <p>我们开始吧！我先贴个图</p>
@@ -423,53 +421,93 @@ clock - timestamp &lt;= freespace * SoftRefLRUPolicyMSPerMB。<br>
 <p>-Dsun.reflect.inflationThreshold=15，膨胀阈值，默认是15，超过阈值，会进行调用过程优化，动态生成类；如果设置为0，那就跟上面的noInflation=true没什么区别了</p>
 <p>-XX:SoftRefLRUPolicyMSPerMB=1000，软应用的存货时间，内部通过LRU最近最少访问算法实现。</p>
 
+              </div>
+              <div class="toc-container">
+                <ul class="markdownIt-TOC">
+<li><a href="#method%E8%BF%90%E8%A1%8C%E5%8E%9F%E7%90%86">Method运行原理</a>
+<ul>
+<li><a href="#classgetdeclaredmethod">Class.getDeclaredMethod</a></li>
+<li><a href="#methodinvoke">Method.invoke</a></li>
+<li><a href="#%E6%80%BB%E7%BB%93">总结</a>
+<ul>
+<li><a href="#%E7%BB%93%E6%9E%84%E5%9B%BE">结构图</a></li>
+<li><a href="#%E6%B5%81%E7%A8%8B%E6%A2%B3%E7%90%86">流程梳理：</a></li>
+<li><a href="#%E9%9A%90%E8%97%8F%E9%A3%8E%E9%99%A9">隐藏风险</a></li>
+<li><a href="#cms-g1%E5%9E%83%E5%9C%BE%E6%94%B6%E9%9B%86%E5%99%A8%E7%9A%84%E8%A1%A8%E7%8E%B0">CMS G1垃圾收集器的表现</a></li>
+<li><a href="#%E9%87%8D%E8%A6%81%E5%8F%82%E6%95%B0">重要参数</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+              </div>
             </div>
-            
-              <div class="tag-container">
-                
-                  <a href="https://shiyuesheng.github.io/tag/HUkMjpiFt/" class="tag">
-                    反射
-                  </a>
-                
-              </div>
-            
-            
-              <div class="next-post">
-                <div class="next">下一篇</div>
-                <a href="https://shiyuesheng.github.io/post/dai-li-jing-jin-xi-lie-shi-jdkandcglib-dong-tai-dai-li-dui-bi/">
-                  <h3 class="post-title">
-                    代理精进系列十：JDK&amp;Cglib动态代理对比
-                  </h3>
-                </a>
-              </div>
-            
-
-            
-
-          </div>
-
+          </article>
         </div>
+
+        
+          <div class="next-post">
+            <div class="next">下一篇</div>
+            <a href="https://shiyuesheng.github.io/post/dai-li-jing-jin-xi-lie-shi-jdkandcglib-dong-tai-dai-li-dui-bi/">
+              <h3 class="post-title">
+                代理精进系列十：JDK&amp;Cglib动态代理对比
+              </h3>
+            </a>
+          </div>
+        
+
+        
+
+        <div class="site-footer">
+  Powered by <a href="https://github.com/getgridea/gridea" target="_blank">Gridea</a>
+  <a class="rss" href="https://shiyuesheng.github.io/atom.xml" target="_blank">
+    <i class="ri-rss-line"></i> RSS
+  </a>
+</div>
+
       </div>
     </div>
 
-    <script src="https://unpkg.com/aos@next/dist/aos.js"></script>
-<script type="application/javascript">
+    <script>
+      hljs.initHighlightingOnLoad()
 
-AOS.init();
+      let mainNavLinks = document.querySelectorAll(".markdownIt-TOC a");
 
-var app = new Vue({
-  el: '#app',
-  data: {
-    menuVisible: false,
-  },
-})
+      // This should probably be throttled.
+      // Especially because it triggers during smooth scrolling.
+      // https://lodash.com/docs/4.17.10#throttle
+      // You could do like...
+      // window.addEventListener("scroll", () => {
+      //    _.throttle(doThatStuff, 100);
+      // });
+      // Only not doing it here to keep this Pen dependency-free.
 
-</script>
+      window.addEventListener("scroll", event => {
+        let fromTop = window.scrollY;
 
+        mainNavLinks.forEach((link, index) => {
+          let section = document.getElementById(decodeURI(link.hash).substring(1));
+          let nextSection = null
+          if (mainNavLinks[index + 1]) {
+            nextSection = document.getElementById(decodeURI(mainNavLinks[index + 1].hash).substring(1));
+          }
+          if (section.offsetTop <= fromTop) {
+            if (nextSection) {
+              if (nextSection.offsetTop > fromTop) {
+                link.classList.add("current");
+              } else {
+                link.classList.remove("current");    
+              }
+            } else {
+              link.classList.add("current");
+            }
+          } else {
+            link.classList.remove("current");
+          }
+        });
+      });
 
-
-
-
-
+    </script>
   </body>
 </html>

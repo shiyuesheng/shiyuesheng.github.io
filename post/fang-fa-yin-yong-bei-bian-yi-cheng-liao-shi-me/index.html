@@ -1,20 +1,13 @@
-<!DOCTYPE html>
 <html>
   <head>
-    <meta charset="utf-8" >
-
+    <meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>Lambda系列二：方法引用被编译成了什么 | 玄戈大人</title>
-
-<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
-
-<link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.7.2/css/all.css" integrity="sha384-fnmOCqbTlWIlj8LyTjo7mOUStjsKC4pOpQbqyi7RrhN7udi9RwhKkMHpvLbHG9Sr" crossorigin="anonymous">
-<link rel="shortcut icon" href="https://shiyuesheng.github.io/favicon.ico?v=1619362761380">
+<link rel="shortcut icon" href="https://shiyuesheng.github.io/favicon.ico?v=1619362927441">
+<link href="https://cdn.jsdelivr.net/npm/remixicon@2.3.0/fonts/remixicon.css" rel="stylesheet">
 <link rel="stylesheet" href="https://shiyuesheng.github.io/styles/main.css">
-
-
-
-<link rel="stylesheet" href="https://unpkg.com/aos@next/dist/aos.css" />
-<script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js"></script>
+<link rel="alternate" type="application/atom+xml" title="Lambda系列二：方法引用被编译成了什么 | 玄戈大人 - Atom Feed" href="https://shiyuesheng.github.io/atom.xml">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Droid+Serif:400,700">
 
 
 
@@ -26,81 +19,86 @@ lambda表达式会在声明类中生成私有静态方法，lambda表达式的�
 方法引用不会生成私有静态方法，引用的方法在动态生成的内部类中调用
 ..." />
     <meta name="keywords" content="Lambda" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.10.0/katex.min.css">
+    <script src="https://cdn.bootcss.com/highlight.js/9.12.0/highlight.min.js"></script>
   </head>
   <body>
-    <div id="app" class="main">
-
-      <div class="sidebar" :class="{ 'full-height': menuVisible }">
-  <div class="top-container" data-aos="fade-right">
-    <div class="top-header-container">
-      <a class="site-title-container" href="https://shiyuesheng.github.io">
-        <img src="https://shiyuesheng.github.io/images/avatar.png?v=1619362761380" class="site-logo">
-        <h1 class="site-title">玄戈大人</h1>
-      </a>
-      <div class="menu-btn" @click="menuVisible = !menuVisible">
-        <div class="line"></div>
-      </div>
-    </div>
-    <div>
+    <div class="main">
+      <div class="main-content">
+        <div class="site-header">
+  <a href="https://shiyuesheng.github.io">
+  <img class="avatar" src="https://shiyuesheng.github.io/images/avatar.png?v=1619362927441" alt="">
+  </a>
+  <h1 class="site-title">
+    玄戈大人
+  </h1>
+  <p class="site-description">
+    垂露悬针聚墨藏锋的章法，书同南北交手相传漫天涯
+  </p>
+  <div class="menu-container">
+    
       
-        
-          <a href="/" class="site-nav">
-            首页
-          </a>
-        
+        <a href="/" class="menu">
+          首页
+        </a>
       
-        
-          <a href="/archives" class="site-nav">
-            归档
-          </a>
-        
+    
       
-        
-          <a href="/tags" class="site-nav">
-            标签
-          </a>
-        
+        <a href="/archives" class="menu">
+          归档
+        </a>
       
-        
-          <a href="/post/about" class="site-nav">
-            关于
-          </a>
-        
+    
       
-    </div>
+        <a href="/tags" class="menu">
+          标签
+        </a>
+      
+    
+      
+        <a href="/post/about" class="menu">
+          关于
+        </a>
+      
+    
   </div>
-  <div class="bottom-container" data-aos="flip-up" data-aos-offset="0">
-    <div class="social-container">
+  <div class="social-container">
+    
       
-        
+    
       
-        
+    
       
-        
+    
       
-        
+    
       
-        
-      
-    </div>
-    <div class="site-description">
-      垂露悬针聚墨藏锋的章法，书同南北交手相传漫天涯
-    </div>
-    <div class="site-footer">
-      Powered by <a href="https://github.com/getgridea/gridea" target="_blank">Gridea</a> | <a class="rss" href="https://shiyuesheng.github.io/atom.xml" target="_blank">RSS</a>
-    </div>
+    
   </div>
 </div>
 
-
-      <div class="main-container">
-        <div class="content-container" data-aos="fade-up">
-          <div class="post-detail">
-            <h2 class="post-title">Lambda系列二：方法引用被编译成了什么</h2>
-            <div class="post-date">2021-04-02</div>
+        <div class="post-detail">
+          <article class="post">
+            <h2 class="post-title">
+              Lambda系列二：方法引用被编译成了什么
+            </h2>
+            <div class="post-info">
+              <span>
+                2021-04-02
+              </span>
+              <span>
+                6 min read
+              </span>
+              
+                <a href="https://shiyuesheng.github.io/tag/1aXG2ZH79/" class="post-tag">
+                  # Lambda
+                </a>
+              
+            </div>
             
-            <div class="post-content" v-pre>
-              <blockquote>
+            <div class="post-content-wrapper">
+              <div class="post-content">
+                <blockquote>
 <p>先进行总结，方便回顾：</p>
 <p>lambda表达式同方法引用编译之后的基本一致，区别在于：</p>
 <ul>
@@ -224,53 +222,94 @@ LambdaTest.lambdaTest::toLong
 <p><strong>一</strong>是我草率了，因为毕竟是猜测，在我的知识盲区，可能有不能这么处理的原因。</p>
 <p><strong>二</strong>是官方目前没做优化，但是将来可能会对这种情况有优化？毕竟动态调用模式非常灵活，jvm内部的策略升级对我们是透明无感知的。</p>
 
+              </div>
+              <div class="toc-container">
+                <ul class="markdownIt-TOC">
+<li>
+<ul>
+<li><a href="#%E4%B8%80%E4%B8%AA%E7%AE%80%E5%8D%95%E7%9A%84%E4%BE%8B%E5%AD%90">一个简单的例子</a></li>
+<li><a href="#%E6%8D%95%E8%8E%B7%E5%8F%98%E9%87%8F%E7%9A%84%E4%BE%8B%E5%AD%90">捕获变量的例子</a>
+<ul>
+<li><a href="#%E6%80%BB%E7%BB%93">总结：</a>
+<ul>
+<li><a href="#1-lambda%E8%A1%A8%E8%BE%BE%E5%BC%8F%E5%90%8C%E6%96%B9%E6%B3%95%E5%BC%95%E7%94%A8%E7%BC%96%E8%AF%91%E4%B9%8B%E5%90%8E%E7%9A%84%E5%9F%BA%E6%9C%AC%E4%B8%80%E8%87%B4%E5%8C%BA%E5%88%AB%E5%9C%A8%E4%BA%8E">1、lambda表达式同方法引用编译之后的基本一致，区别在于：</a></li>
+<li><a href="#2-%E6%96%B9%E6%B3%95%E5%BC%95%E7%94%A8-%E6%96%B9%E6%B3%95%E5%BC%95%E7%94%A8%E4%B8%BB%E4%BD%93%E6%98%AF%E6%96%B9%E6%B3%95%E5%B7%B2%E7%BB%8F%E5%AE%9A%E4%B9%89%E5%A5%BD%E7%9A%84%E6%96%B9%E6%B3%95%E9%80%BB%E8%BE%91%E9%83%BD%E5%9C%A8%E6%96%B9%E6%B3%95%E4%B8%AD%E4%B8%8B%E6%B8%B8%E9%80%BB%E8%BE%91%E5%8F%AA%E7%AE%A1%E8%B0%83%E7%94%A8%E5%B0%B1%E5%A5%BD%E4%BA%86-%E8%BF%99%E4%B9%9F%E7%AE%97%E6%98%AF%E5%8C%BA%E5%88%AB%E4%BA%8Elambda%E8%A1%A8%E8%BE%BE%E5%BC%8F%E5%9C%B0%E6%96%B9%E5%90%A7%E9%80%BB%E8%BE%91%E4%BB%A3%E7%A0%81%E5%9D%97-code-%E6%89%80%E4%BB%A5lambda%E8%A1%A8%E8%BE%BE%E5%BC%8F%E7%9A%84%E4%BB%A3%E7%A0%81%E5%9D%97%E5%9C%A8%E7%BC%96%E8%AF%91%E6%9C%9F%E4%B8%AD%E5%8E%9F%E5%B0%81%E4%B8%8D%E5%8A%A8%E7%9A%84%E6%94%BE%E5%9C%A8%E4%BA%86%E7%94%9F%E6%88%90%E7%9A%84%E7%A7%81%E6%9C%89%E9%9D%99%E6%80%81%E6%96%B9%E6%B3%95%E4%B8%AD%E4%B9%9F%E7%AE%97%E6%98%AF%E6%9C%89%E6%89%80%E5%BD%92%E5%B1%9E-%E6%84%9F%E8%A7%89%E5%83%8F%E6%98%AF%E7%BC%96%E8%AF%91%E6%9C%9F%E4%BA%BA%E4%B8%BA%E7%9A%84%E5%90%91%E6%96%B9%E6%B3%95%E5%BC%95%E7%94%A8%E9%9D%A0%E6%8B%A2%E4%BB%A5%E6%9C%9F%E5%9C%A8%E8%BF%90%E8%A1%8C%E6%9C%9F%E5%8A%A8%E6%80%81%E8%B0%83%E7%94%A8%E6%97%B6%E8%BE%BE%E6%88%90%E5%85%B1%E6%80%A7%E7%9A%84%E9%80%BB%E8%BE%91%E5%95%8A%E8%BF%99%E4%B8%80%E5%A4%A7%E6%AE%B5%E7%BA%AF%E5%B1%9E%E7%8C%9C%E6%B5%8B%E7%9C%8B%E4%B8%AA%E4%B9%90%E8%A7%89%E5%BE%97%E6%9C%89%E7%94%A8%E5%B0%B1%E5%BD%93%E6%98%AF%E6%8A%9B%E7%A0%96%E5%BC%95%E7%8E%89%E4%BA%86">2、方法引用、方法引用，主体是方法，已经定义好的方法，逻辑都在方法中，下游逻辑只管调用就好了。这也算是区别于lambda表达式地方吧（逻辑代码块 {code....} ），所以lambda表达式的代码块在编译期中原封不动的放在了生成的私有静态方法中，也算是有所归属。感觉像是编译期人为的向方法引用靠拢，以期在运行期动态调用时达成共性的逻辑（啊这一大段纯属猜测，看个乐，觉得有用，就当是抛砖引玉了）</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li><a href="#%E7%96%91%E9%97%AE-%E8%83%A1%E5%A4%A9%E6%89%AF%E5%9C%B0">疑问-胡天扯地</a></li>
+</ul>
+</li>
+</ul>
+
+              </div>
             </div>
-            
-              <div class="tag-container">
-                
-                  <a href="https://shiyuesheng.github.io/tag/1aXG2ZH79/" class="tag">
-                    Lambda
-                  </a>
-                
-              </div>
-            
-            
-              <div class="next-post">
-                <div class="next">下一篇</div>
-                <a href="https://shiyuesheng.github.io/post/lambda-biao-da-shi-bei-bian-yi-cheng-liao-shi-me/">
-                  <h3 class="post-title">
-                    Lambda系列一：Lambda表达式被编译成了什么
-                  </h3>
-                </a>
-              </div>
-            
-
-            
-
-          </div>
-
+          </article>
         </div>
+
+        
+          <div class="next-post">
+            <div class="next">下一篇</div>
+            <a href="https://shiyuesheng.github.io/post/lambda-biao-da-shi-bei-bian-yi-cheng-liao-shi-me/">
+              <h3 class="post-title">
+                Lambda系列一：Lambda表达式被编译成了什么
+              </h3>
+            </a>
+          </div>
+        
+
+        
+
+        <div class="site-footer">
+  Powered by <a href="https://github.com/getgridea/gridea" target="_blank">Gridea</a>
+  <a class="rss" href="https://shiyuesheng.github.io/atom.xml" target="_blank">
+    <i class="ri-rss-line"></i> RSS
+  </a>
+</div>
+
       </div>
     </div>
 
-    <script src="https://unpkg.com/aos@next/dist/aos.js"></script>
-<script type="application/javascript">
+    <script>
+      hljs.initHighlightingOnLoad()
 
-AOS.init();
+      let mainNavLinks = document.querySelectorAll(".markdownIt-TOC a");
 
-var app = new Vue({
-  el: '#app',
-  data: {
-    menuVisible: false,
-  },
-})
+      // This should probably be throttled.
+      // Especially because it triggers during smooth scrolling.
+      // https://lodash.com/docs/4.17.10#throttle
+      // You could do like...
+      // window.addEventListener("scroll", () => {
+      //    _.throttle(doThatStuff, 100);
+      // });
+      // Only not doing it here to keep this Pen dependency-free.
 
-</script>
+      window.addEventListener("scroll", event => {
+        let fromTop = window.scrollY;
 
+        mainNavLinks.forEach((link, index) => {
+          let section = document.getElementById(decodeURI(link.hash).substring(1));
+          let nextSection = null
+          if (mainNavLinks[index + 1]) {
+            nextSection = document.getElementById(decodeURI(mainNavLinks[index + 1].hash).substring(1));
+          }
+          if (section.offsetTop <= fromTop) {
+            if (nextSection) {
+              if (nextSection.offsetTop > fromTop) {
+                link.classList.add("current");
+              } else {
+                link.classList.remove("current");    
+              }
+            } else {
+              link.classList.add("current");
+            }
+          } else {
+            link.classList.remove("current");
+          }
+        });
+      });
 
-
-
-
-
+    </script>
   </body>
 </html>
