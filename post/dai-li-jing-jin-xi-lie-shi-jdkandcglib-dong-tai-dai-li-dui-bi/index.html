@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" >
+
+<title>代理精进系列十：JDK&amp;Cglib动态代理对比 | 玄戈大人</title>
+
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+
+<link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.7.2/css/all.css" integrity="sha384-fnmOCqbTlWIlj8LyTjo7mOUStjsKC4pOpQbqyi7RrhN7udi9RwhKkMHpvLbHG9Sr" crossorigin="anonymous">
+<link rel="shortcut icon" href="https://shiyuesheng.github.io/favicon.ico?v=1619362761380">
+<link rel="stylesheet" href="https://shiyuesheng.github.io/styles/main.css">
+
+
+
+<link rel="stylesheet" href="https://unpkg.com/aos@next/dist/aos.css" />
+<script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js"></script>
+
+
+
+    <meta name="description" content="JDK&amp;Cglib动态代理对比
+JDK
+
+基本原理------Java动态代理只能够对接口进行代理，不能对普通的类进行代理（因为Java动态代理生成的代理类的父类为Proxy，Java类继承机制不允许多重继承）；CGLIB能够代理普..." />
+    <meta name="keywords" content="代理" />
+  </head>
+  <body>
+    <div id="app" class="main">
+
+      <div class="sidebar" :class="{ 'full-height': menuVisible }">
+  <div class="top-container" data-aos="fade-right">
+    <div class="top-header-container">
+      <a class="site-title-container" href="https://shiyuesheng.github.io">
+        <img src="https://shiyuesheng.github.io/images/avatar.png?v=1619362761380" class="site-logo">
+        <h1 class="site-title">玄戈大人</h1>
+      </a>
+      <div class="menu-btn" @click="menuVisible = !menuVisible">
+        <div class="line"></div>
+      </div>
+    </div>
+    <div>
+      
+        
+          <a href="/" class="site-nav">
+            首页
+          </a>
+        
+      
+        
+          <a href="/archives" class="site-nav">
+            归档
+          </a>
+        
+      
+        
+          <a href="/tags" class="site-nav">
+            标签
+          </a>
+        
+      
+        
+          <a href="/post/about" class="site-nav">
+            关于
+          </a>
+        
+      
+    </div>
+  </div>
+  <div class="bottom-container" data-aos="flip-up" data-aos-offset="0">
+    <div class="social-container">
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    </div>
+    <div class="site-description">
+      垂露悬针聚墨藏锋的章法，书同南北交手相传漫天涯
+    </div>
+    <div class="site-footer">
+      Powered by <a href="https://github.com/getgridea/gridea" target="_blank">Gridea</a> | <a class="rss" href="https://shiyuesheng.github.io/atom.xml" target="_blank">RSS</a>
+    </div>
+  </div>
+</div>
+
+
+      <div class="main-container">
+        <div class="content-container" data-aos="fade-up">
+          <div class="post-detail">
+            <h2 class="post-title">代理精进系列十：JDK&amp;Cglib动态代理对比</h2>
+            <div class="post-date">2021-04-25</div>
+            
+            <div class="post-content" v-pre>
+              <h1 id="jdkcglib动态代理对比">JDK&amp;Cglib动态代理对比</h1>
+<h2 id="jdk">JDK</h2>
+<ol>
+<li><strong>基本原理</strong>------Java动态代理只能够对接口进行代理，不能对普通的类进行代理（因为Java动态代理生成的代理类的父类为Proxy，Java类继承机制不允许多重继承）；CGLIB能够代理普通类。</li>
+<li><strong>生成过程</strong>------Java动态代理使内置了生成代理类的代码模板，生成逻辑较简单，生成的代理类结构、体量较小，在生成类过程中比较高效。</li>
+<li><strong>调用过程</strong>------代理方法最终是通过传统的Java反射，Method.invoke执行的，执行逻辑较为复杂，在执行效率上进行了优化，但同时因为优化造成了一定的风险。</li>
+</ol>
+<h2 id="cglib">Cglib</h2>
+<ol>
+<li><strong>基本原理</strong>------cglib可以为普通类、接口类创建代理。普通类代理是通过继承来实现的。相当于给需要被代理的类创建了一个子类，然后会重写父类中的方法，来进行增强。继承的特性大家应该都知道，遵循Java基本语法，会有如下限制：
+<ul>
+<li>final修饰的类是不能被继承的，</li>
+<li>final修饰的方法不能被重写，</li>
+<li>static修饰的方法也不能被重写，</li>
+<li>private修饰的方法也不能被子类重写。</li>
+</ul>
+</li>
+<li><strong>生成过程-</strong>-----cglib通过ASM字节码工具生成代理子类，生成逻辑复杂，生成的代理类结构、体量较大。FastClass机制会同时为目标类，代理类生成对应的FastClass子类。所以生成过程相对更加繁琐，效率更低，占用更多的方法区内存资源。当然内部过了优化，比如缓存生成的class，防止多次生成浪费时间成本。</li>
+<li><strong>调用过程</strong>------代理方法最终是通过FastClass快速索引机制进行调用，就相当于我们平常写的方法调用，这无疑是非常高效的。</li>
+</ol>
+<p>Method运行也做了优化，也有类似FastClass这样的硬编码直接调用，但内部逻辑存在一定的风险，想了解更多看我之前的文章</p>
+
+            </div>
+            
+              <div class="tag-container">
+                
+                  <a href="https://shiyuesheng.github.io/tag/mcczt0zHk/" class="tag">
+                    代理
+                  </a>
+                
+              </div>
+            
+            
+              <div class="next-post">
+                <div class="next">下一篇</div>
+                <a href="https://shiyuesheng.github.io/post/dai-li-jing-jin-xi-lie-jiu-cglib-dong-tai-dai-li-yuan-li-er/">
+                  <h3 class="post-title">
+                    代理精进系列九：Cglib动态代理原理（二）
+                  </h3>
+                </a>
+              </div>
+            
+
+            
+
+          </div>
+
+        </div>
+      </div>
+    </div>
+
+    <script src="https://unpkg.com/aos@next/dist/aos.js"></script>
+<script type="application/javascript">
+
+AOS.init();
+
+var app = new Vue({
+  el: '#app',
+  data: {
+    menuVisible: false,
+  },
+})
+
+</script>
+
+
+
+
+
+
+  </body>
+</html>

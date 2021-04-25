@@ -1,0 +1,451 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" >
+
+<title>代理精进系列五：JDK动态代理原理 | 玄戈大人</title>
+
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+
+<link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.7.2/css/all.css" integrity="sha384-fnmOCqbTlWIlj8LyTjo7mOUStjsKC4pOpQbqyi7RrhN7udi9RwhKkMHpvLbHG9Sr" crossorigin="anonymous">
+<link rel="shortcut icon" href="https://shiyuesheng.github.io/favicon.ico?v=1619362761380">
+<link rel="stylesheet" href="https://shiyuesheng.github.io/styles/main.css">
+
+
+
+<link rel="stylesheet" href="https://unpkg.com/aos@next/dist/aos.css" />
+<script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js"></script>
+
+
+
+    <meta name="description" content="JDK动态代理原理
+
+简单的分析下JDK动态代理的底层原理，只摸脉络、不究细节。
+整体概括，方便回顾：Proxy.newProxyInstance()
+1、查找或者创建代理类class
+
+缓存中查找是否有合适的代理类Class对象，有则返回..." />
+    <meta name="keywords" content="代理" />
+  </head>
+  <body>
+    <div id="app" class="main">
+
+      <div class="sidebar" :class="{ 'full-height': menuVisible }">
+  <div class="top-container" data-aos="fade-right">
+    <div class="top-header-container">
+      <a class="site-title-container" href="https://shiyuesheng.github.io">
+        <img src="https://shiyuesheng.github.io/images/avatar.png?v=1619362761380" class="site-logo">
+        <h1 class="site-title">玄戈大人</h1>
+      </a>
+      <div class="menu-btn" @click="menuVisible = !menuVisible">
+        <div class="line"></div>
+      </div>
+    </div>
+    <div>
+      
+        
+          <a href="/" class="site-nav">
+            首页
+          </a>
+        
+      
+        
+          <a href="/archives" class="site-nav">
+            归档
+          </a>
+        
+      
+        
+          <a href="/tags" class="site-nav">
+            标签
+          </a>
+        
+      
+        
+          <a href="/post/about" class="site-nav">
+            关于
+          </a>
+        
+      
+    </div>
+  </div>
+  <div class="bottom-container" data-aos="flip-up" data-aos-offset="0">
+    <div class="social-container">
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    </div>
+    <div class="site-description">
+      垂露悬针聚墨藏锋的章法，书同南北交手相传漫天涯
+    </div>
+    <div class="site-footer">
+      Powered by <a href="https://github.com/getgridea/gridea" target="_blank">Gridea</a> | <a class="rss" href="https://shiyuesheng.github.io/atom.xml" target="_blank">RSS</a>
+    </div>
+  </div>
+</div>
+
+
+      <div class="main-container">
+        <div class="content-container" data-aos="fade-up">
+          <div class="post-detail">
+            <h2 class="post-title">代理精进系列五：JDK动态代理原理</h2>
+            <div class="post-date">2021-04-25</div>
+            
+            <div class="post-content" v-pre>
+              <h1 id="jdk动态代理原理">JDK动态代理原理</h1>
+<blockquote>
+<p>简单的分析下JDK动态代理的底层原理，只摸脉络、不究细节。</p>
+<p>整体概括，方便回顾：<strong>Proxy.newProxyInstance()</strong></p>
+<p>1、查找或者创建代理类class</p>
+<ul>
+<li>缓存中查找是否有合适的代理类Class对象，有则返回。</li>
+<li>缓存中不存在，创建代理类Class
+<ul>
+<li>对ClassLoader、interfaces进行校验</li>
+<li>通过计数构造代理类名称</li>
+<li>JDK内置的代理类生成模版，生成字节码</li>
+<li>ClassLoader加载字节码</li>
+</ul>
+</li>
+</ul>
+<p>2、反射获取参数为InvocationHandler的构造函数</p>
+<p>3、反射实例化代理类</p>
+<p>简单分析Proxy类下几个重要的属性变量、方法：</p>
+</blockquote>
+<h3 id="实例变量protected-invocationhandler-h">实例变量：protected InvocationHandler h</h3>
+<p>这个没什么好说的，已经很熟悉了，动态生成的代理类实例在实例化时，会给这个字段赋值我们指定的方法调用处理器。</p>
+<h3 id="静态方法proxynewproxyinstance">静态方法：Proxy.newProxyInstance()</h3>
+<pre><code class="language-java">public static Object newProxyInstance(ClassLoader loader,
+                                          Class&lt;?&gt;[] interfaces,
+                                          InvocationHandler h)
+        throws IllegalArgumentException
+    {
+        Objects.requireNonNull(h);
+
+        //数组clone
+        final Class&lt;?&gt;[] intfs = interfaces.clone();
+        //权限校验 不做深究
+        final SecurityManager sm = System.getSecurityManager();
+        if (sm != null) {
+            checkProxyAccess(Reflection.getCallerClass(), loader, intfs);
+        }
+
+        /*
+         * 查找或者生成代理类class。这一步是核心逻辑，具体逻辑在ProxyClassFactory中实现
+         */
+        Class&lt;?&gt; cl = getProxyClass0(loader, intfs);
+
+        /*
+         * 用指定的调用处理程序调用其构造函数
+         */
+        try {
+            if (sm != null) {
+                checkNewProxyPermission(Reflection.getCallerClass(), cl);
+            }
+
+            final Constructor&lt;?&gt; cons = cl.getConstructor(constructorParams);
+            final InvocationHandler ih = h;
+            if (!Modifier.isPublic(cl.getModifiers())) {
+                AccessController.doPrivileged(new PrivilegedAction&lt;Void&gt;() {
+                    public Void run() {
+                        cons.setAccessible(true);
+                        return null;
+                    }
+                });
+            }
+            return cons.newInstance(new Object[]{h});
+        } catch (IllegalAccessException|InstantiationException e) {
+            throw new InternalError(e.toString(), e);
+        } catch (InvocationTargetException e) {
+            Throwable t = e.getCause();
+            if (t instanceof RuntimeException) {
+                throw (RuntimeException) t;
+            } else {
+                throw new InternalError(t.toString(), t);
+            }
+        } catch (NoSuchMethodException e) {
+            throw new InternalError(e.toString(), e);
+        }
+    }
+</code></pre>
+<p>这是使用JDK动态代理的入口，返回代理类。逻辑比较简单，生成代理类class，获取构造器、创建新的实例。最核心的生成代理类class不在此处。</p>
+<p>内部做了缓存优化，并不是每次调用都要编码、加载代理类class。缓存使用key-value映射进行存储，缓存的依据是 Class&lt;?&gt;[] interfaces，使用interfaces包装后的SubKey对象作为键，代理类class包装后的CacheValue为值（也可能是Factory）。</p>
+<p>所以interfaces数组接口的顺序尤为重要，不同顺序的interfaces数组生成的代理类class是不同的，缓存中的SubKey也是不同的</p>
+<h3 id="静态内部类工厂proxyclassfactory">静态内部类工厂：ProxyClassFactory</h3>
+<pre><code class="language-java">private static final class ProxyClassFactory
+    implements BiFunction&lt;ClassLoader, Class&lt;?&gt;[], Class&lt;?&gt;&gt;
+{
+    // 所有代理类名称的前缀
+    private static final String proxyClassNamePrefix = &quot;$Proxy&quot;;
+
+    // 用于生成下一个唯一代理类名称的数字
+    private static final AtomicLong nextUniqueNumber = new AtomicLong();
+
+    @Override
+    public Class&lt;?&gt; apply(ClassLoader loader, Class&lt;?&gt;[] interfaces) {
+
+        // 用来验证接口数组中是否存在重复的Map
+        Map&lt;Class&lt;?&gt;, Boolean&gt; interfaceSet = new IdentityHashMap&lt;&gt;(interfaces.length);
+        // 整个for循环就是用来验证接口数组的
+        for (Class&lt;?&gt; intf : interfaces) {
+            /*
+             * 验证类加载器是否将此接口的名称解析为相同的Class对象。
+             */
+            Class&lt;?&gt; interfaceClass = null;
+            try {
+                interfaceClass = Class.forName(intf.getName(), false, loader);
+            } catch (ClassNotFoundException e) {
+            }
+            if (interfaceClass != intf) {
+                throw new IllegalArgumentException(
+                    intf + &quot; is not visible from class loader&quot;);
+            }
+            /*
+             * 验证Class对象实际上代表一个接口。
+             */
+            if (!interfaceClass.isInterface()) {
+                throw new IllegalArgumentException(
+                    interfaceClass.getName() + &quot; is not an interface&quot;);
+            }
+            /*
+             * 验证此接口不是重复的。
+             */
+            if (interfaceSet.put(interfaceClass, Boolean.TRUE) != null) {
+                throw new IllegalArgumentException(
+                    &quot;repeated interface: &quot; + interfaceClass.getName());
+            }
+        }
+
+        String proxyPkg = null;     // package to define proxy class in
+        int accessFlags = Modifier.PUBLIC | Modifier.FINAL;
+
+        /*
+         * Record the package of a non-public proxy interface so that the
+         * proxy class will be defined in the same package.  Verify that
+         * all non-public proxy interfaces are in the same package.
+         */
+        //记录非公共代理接口的程序包，以便在同一程序包中定义代理类。验证所有非公共代理接口都在同一程序包中。
+        for (Class&lt;?&gt; intf : interfaces) {
+            int flags = intf.getModifiers();
+            if (!Modifier.isPublic(flags)) {
+                accessFlags = Modifier.FINAL;
+                String name = intf.getName();
+                int n = name.lastIndexOf('.');
+                String pkg = ((n == -1) ? &quot;&quot; : name.substring(0, n + 1));
+                if (proxyPkg == null) {
+                    proxyPkg = pkg;
+                } else if (!pkg.equals(proxyPkg)) {
+                    throw new IllegalArgumentException(
+                        &quot;non-public interfaces from different packages&quot;);
+                }
+            }
+        }
+
+        if (proxyPkg == null) {
+            // if no non-public proxy interfaces, use com.sun.proxy package
+            proxyPkg = ReflectUtil.PROXY_PACKAGE + &quot;.&quot;;
+        }
+
+        /*
+         * 选择要生成的代理类的名称
+         */
+        long num = nextUniqueNumber.getAndIncrement();
+        String proxyName = proxyPkg + proxyClassNamePrefix + num;
+
+        /*
+         * 生成指定的代理类 字节码
+         */
+        byte[] proxyClassFile = ProxyGenerator.generateProxyClass(
+            proxyName, interfaces, accessFlags);
+        try {
+            //加载器加载类
+            return defineClass0(loader, proxyName,
+                                proxyClassFile, 0, proxyClassFile.length);
+        } catch (ClassFormatError e) {
+            /*
+             * A ClassFormatError here means that (barring bugs in the
+             * proxy class generation code) there was some other
+             * invalid aspect of the arguments supplied to the proxy
+             * class creation (such as virtual machine limitations
+             * exceeded).
+             */
+            throw new IllegalArgumentException(e.toString());
+        }
+    }
+}
+</code></pre>
+<p>代理类工厂，真正干活的地方，用于生成，定义，加载，返回代理类，使用给定ClassLoader和接口数组。整体流程：</p>
+<ul>
+<li>对传入的接口数组，也就是代理类要实现的接口，进行安全校验。数组中的class是否重复、是否是一个接口，是否能被传入的ClassLoader加载、识别。</li>
+<li>组装要生成的代理类的类名，$Proxy后面拼接AtomicLong计数器，支持并发。</li>
+<li>生成代理类字节码，ProxyGenerator.generateProxyClass，内部就是一套生成代理类壳子的代码模板，根据要实现的接口最终生成代理类字节码。不做深究，不是asm、javassist。</li>
+<li>加载器加载代理类，返回代理类class对象。</li>
+</ul>
+<p>到此为止，上面的ProxyClassFactory已经能够完成JDK动态代理的核心任务了。下面所描述的都是缓存优化相关。可跳过。</p>
+<h3 id="静态内部类工厂keyfactory">静态内部类工厂：KeyFactory</h3>
+<pre><code class="language-java">private static final class KeyFactory
+    implements BiFunction&lt;ClassLoader, Class&lt;?&gt;[], Object&gt;
+{
+    @Override
+    public Object apply(ClassLoader classLoader, Class&lt;?&gt;[] interfaces) {
+        switch (interfaces.length) {
+            case 1: return new Key1(interfaces[0]); // the most frequent
+            case 2: return new Key2(interfaces[0], interfaces[1]);
+            case 0: return key0;
+            default: return new KeyX(interfaces);
+        }
+    }
+}
+</code></pre>
+<p>SubKey工厂，根据代理类要实现的interfaces生成SubKey对象。用来做缓存key，优化代理类的生成逻辑。</p>
+<p>内部细节上根据interfaces的数量大小做了更进一步的优化，可以跳过，无关大局。</p>
+<p>但要注意的是：</p>
+<ul>
+<li>interfaces数组接口的顺序尤为重要，不同顺序的interfaces数组生成的代理类class是不同的，缓存中的SubKey也是不同的。</li>
+<li>Key1、Key2、KeyX都是WeakReference类型的，如果没有强引用指向这些 Weak-Key？内部的referent对象，JVM进行GC时，会对内部的referent进行回收。也就是说当前的这些 Weak-Key？也就没有作用了，缓存也就失效了，当外部通过相同的interfaces获取代理类时，会重新编码，加载代理类class，然后再放入缓存中。</li>
+</ul>
+<h3 id="私有静态方法proxygetproxyclass0">私有静态方法：Proxy.getProxyClass0()</h3>
+<pre><code class="language-java">private static Class&lt;?&gt; getProxyClass0(ClassLoader loader,
+                                       Class&lt;?&gt;... interfaces) {
+    if (interfaces.length &gt; 65535) {
+        throw new IllegalArgumentException(&quot;interface limit exceeded&quot;);
+    }
+
+    /**
+     * 如果存在实现了给定接口、并被给定加载器定义的代理类，则将简单地返回缓存的副本
+     * 否则，它将通过ProxyClassFactory创建代理类
+     * proxyClassCache = new WeakCache&lt;&gt;(new KeyFactory(), new ProxyClassFactory());
+     * proxyClassCache 内置了KeyFactory、ProxyClassFactory
+     * proxyClassCache 内部不存在真正的代理类生成加载逻辑，见名知意，是用来做缓存的。
+     */
+    return proxyClassCache.get(loader, interfaces);
+}
+</code></pre>
+<p>没啥好说的，就是不直接走代理类生成逻辑，而是把生成代理类工厂注入进proxyClassCache中，中间做一层缓存拦截，缓存没有命中，才会真正的拿着loader、interfaces这俩参数去调用上面提到的 ProxyClassFactory.apply(ClassLoader loader, Class&lt;?&gt;[] interfaces) 工厂方法，真正的走一遍代理类编码、加载逻辑。</p>
+<h3 id="静态变量-proxyclasscache">静态变量 proxyClassCache：</h3>
+<p><code>private static final WeakCache&lt;ClassLoader, Class&lt;?&gt;[], Class&lt;?&gt;&gt; proxyClassCache = new WeakCache&lt;&gt;(new KeyFactory(), new ProxyClassFactory());</code></p>
+<p>Proxy的静态变量，基本上意味的全局唯一。内部注入了Proxy模块的 KeyFactory、ProxyClassFactory。</p>
+<ul>
+<li>KeyFactory：生成缓存用的SubKey对象，在WeakCache里面是二级缓存key。</li>
+<li>ProxyClassFactory：生成动态代理class对象。</li>
+</ul>
+<h3 id="weakcache-弱缓存">WeakCache 弱缓存</h3>
+<pre><code class="language-java">final class WeakCache&lt;K, P, V&gt; {
+    private final ReferenceQueue&lt;K&gt; refQueue
+        = new ReferenceQueue&lt;&gt;();
+    // the key type is Object for supporting null key
+    private final ConcurrentMap&lt;Object, ConcurrentMap&lt;Object, Supplier&lt;V&gt;&gt;&gt; map
+        = new ConcurrentHashMap&lt;&gt;();
+
+    //反向判断代理类是否存在
+    private final ConcurrentMap&lt;Supplier&lt;V&gt;, Boolean&gt; reverseMap
+        = new ConcurrentHashMap&lt;&gt;();
+    //Key工厂
+    private final BiFunction&lt;K, P, ?&gt; subKeyFactory;
+    //代理类工厂
+    private final BiFunction&lt;K, P, V&gt; valueFactory;
+}
+</code></pre>
+<p>(key, sub-key) -&gt; value高速缓存映射对。这个WeakCache是一个抽象的概念，能力有限，这里我们只在动态代理的环境下去进行分析。不过这个弱缓存是真的“弱”啊，人如其名，key、sub-key、value全是弱应用对象。（当然在这个抽象类里面并没有对sub-key进一步包装成弱引用对象，但是冲JDK动态代理的角度，我们知道sub-key是个什么底色，上面提到过，弱引用嘛）</p>
+<ul>
+<li>
+<p><strong>K</strong> - 对应的是加载代理类的ClassLoader</p>
+</li>
+<li>
+<p><strong>P</strong> - 对应的是代理类要实现的接口数组</p>
+</li>
+<li>
+<p><strong>V</strong> - 对应的是代理类class</p>
+</li>
+<li>
+<p><strong>ReferenceQueue<K> refQueue</strong> - 引用队列，主key内容被GC后，用以缓存清理</p>
+</li>
+<li>
+<p><strong>ConcurrentMap&lt;Object, ConcurrentMap&lt;Object, Supplier<V>&gt;&gt; map</strong> - 真正的缓存实体</p>
+<ul>
+<li>key：ClassLoader经过包装后的CacheKey，弱引用</li>
+<li>sub-key：Proxy.KeyFactory 将interfaces包装后的Key1、Key2、KeyX，弱引用</li>
+<li>value：生成的动态代理类Class经过包装后的CacheValue，弱引用</li>
+</ul>
+</li>
+<li>
+<p><strong>ConcurrentMap&lt;Supplier<V>, Boolean&gt; reverseMap</strong> - 已经生成的代理类class缓存，用来快速查找、验证。</p>
+</li>
+<li>
+<p><strong>BiFunction&lt;K, P, ?&gt; subKeyFactory</strong> - 生成缓存用的SubKey对象，在WeakCache里面是二级缓存key。</p>
+</li>
+<li>
+<p><strong>BiFunction&lt;K, P, V&gt; valueFactory</strong> - 生成动态代理class对象。</p>
+</li>
+</ul>
+<p>具体的代码逻辑就不跟着走了，太细节，直接画个图直观的说明一下：</p>
+<figure data-type="image" tabindex="1"><img src="https://tva1.sinaimg.cn/large/008eGmZEly1gpgyjdd0dmj30zz0af75a.jpg" alt="WeakCache-JDK动态代理角度分析" loading="lazy"></figure>
+<p>proxyClassCache.get(loader, interfaces) 流程简单梳理：</p>
+<p>1、将传入的loader包装成CacheKey，这是一个弱引用。</p>
+<p>2、通过CacheKey去获取缓存中一级键值对的value（ConcurrentMap&lt;Object, Supplier<V>&gt;&gt;），不存在就创建。拿到二级键值对。</p>
+<p>3、通过注入的subKeyFactory，根据interfaces生成sub-key。</p>
+<p>4、通过sub-key，获取缓存中二级键值对的value（Supplier<V>）</p>
+<ul>
+<li>存在就调用对应的Supplier.get()，获取代理类Class对象。</li>
+<li>不存在就封装一个Factory（这也是个Supplier），最终调用get()方法，内部会通过注入的<strong>valueFactory</strong>真正的编码、加载代理类，返回Class对象，将之包装成CacheValue（这也是个Supplier，同时是个弱引用），将之放入二级键值对。</li>
+</ul>
+<p>5、返回代理类Class对象。</p>
+
+            </div>
+            
+              <div class="tag-container">
+                
+                  <a href="https://shiyuesheng.github.io/tag/mcczt0zHk/" class="tag">
+                    代理
+                  </a>
+                
+              </div>
+            
+            
+              <div class="next-post">
+                <div class="next">下一篇</div>
+                <a href="https://shiyuesheng.github.io/post/dai-li-jing-jin-xi-lie-si-jdk-dong-tai-dai-li/">
+                  <h3 class="post-title">
+                    代理精进系列四：JDK动态代理
+                  </h3>
+                </a>
+              </div>
+            
+
+            
+
+          </div>
+
+        </div>
+      </div>
+    </div>
+
+    <script src="https://unpkg.com/aos@next/dist/aos.js"></script>
+<script type="application/javascript">
+
+AOS.init();
+
+var app = new Vue({
+  el: '#app',
+  data: {
+    menuVisible: false,
+  },
+})
+
+</script>
+
+
+
+
+
+
+  </body>
+</html>

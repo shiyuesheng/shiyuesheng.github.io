@@ -1,0 +1,583 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" >
+
+<title>代理精进系列七：Cglib FastClass机制 | 玄戈大人</title>
+
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+
+<link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.7.2/css/all.css" integrity="sha384-fnmOCqbTlWIlj8LyTjo7mOUStjsKC4pOpQbqyi7RrhN7udi9RwhKkMHpvLbHG9Sr" crossorigin="anonymous">
+<link rel="shortcut icon" href="https://shiyuesheng.github.io/favicon.ico?v=1619362761380">
+<link rel="stylesheet" href="https://shiyuesheng.github.io/styles/main.css">
+
+
+
+<link rel="stylesheet" href="https://unpkg.com/aos@next/dist/aos.css" />
+<script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js"></script>
+
+
+
+    <meta name="description" content="Cglib FastClass机制
+
+在深入了解Cglib低层原理之前，需要先一步理解Cglib FastClass机制的运作原理，不然看Cglib的源码会有点云里雾里。磨刀不误砍柴工，我们开始吧。
+笼统的说FastClass就是方法的快速..." />
+    <meta name="keywords" content="代理" />
+  </head>
+  <body>
+    <div id="app" class="main">
+
+      <div class="sidebar" :class="{ 'full-height': menuVisible }">
+  <div class="top-container" data-aos="fade-right">
+    <div class="top-header-container">
+      <a class="site-title-container" href="https://shiyuesheng.github.io">
+        <img src="https://shiyuesheng.github.io/images/avatar.png?v=1619362761380" class="site-logo">
+        <h1 class="site-title">玄戈大人</h1>
+      </a>
+      <div class="menu-btn" @click="menuVisible = !menuVisible">
+        <div class="line"></div>
+      </div>
+    </div>
+    <div>
+      
+        
+          <a href="/" class="site-nav">
+            首页
+          </a>
+        
+      
+        
+          <a href="/archives" class="site-nav">
+            归档
+          </a>
+        
+      
+        
+          <a href="/tags" class="site-nav">
+            标签
+          </a>
+        
+      
+        
+          <a href="/post/about" class="site-nav">
+            关于
+          </a>
+        
+      
+    </div>
+  </div>
+  <div class="bottom-container" data-aos="flip-up" data-aos-offset="0">
+    <div class="social-container">
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    </div>
+    <div class="site-description">
+      垂露悬针聚墨藏锋的章法，书同南北交手相传漫天涯
+    </div>
+    <div class="site-footer">
+      Powered by <a href="https://github.com/getgridea/gridea" target="_blank">Gridea</a> | <a class="rss" href="https://shiyuesheng.github.io/atom.xml" target="_blank">RSS</a>
+    </div>
+  </div>
+</div>
+
+
+      <div class="main-container">
+        <div class="content-container" data-aos="fade-up">
+          <div class="post-detail">
+            <h2 class="post-title">代理精进系列七：Cglib FastClass机制</h2>
+            <div class="post-date">2021-04-25</div>
+            
+            <div class="post-content" v-pre>
+              <h1 id="cglib-fastclass机制">Cglib FastClass机制</h1>
+<blockquote>
+<p>在深入了解Cglib低层原理之前，需要先一步理解Cglib FastClass机制的运作原理，不然看Cglib的源码会有点云里雾里。磨刀不误砍柴工，我们开始吧。</p>
+<p>笼统的说FastClass就是方法的快速索引。</p>
+<p>FastClass不使用传统的反射类（Constructor或Method）来调用委托类方法，而是为目标类动态生成一个新的类（继承FastClass），我后面用<strong>FastClass动态子类</strong>来称呼这个动态生成的类。FastClass动态子类内部维护了目标类所有方法的索引，外部进行调用时，通过方法签名或者方法名称+参数类型查找（lookup）对应的方法索引，然后进行显式的调用。</p>
+<p>这个FastClass动态子类跟目标类就像是孪生的关系，目标类干活，FastClass动态子类在目标类基础上构建索引，为目标类提供更加高效的方法访问、调用。</p>
+<p>有的必有失，高性能的访问是有代价的，就是fastclass是动态生成的，构建过程会有一定的性能开销，会占用JVM内存中的方法区资源。当然Cglib内部作了极致的优化，缓存绑定的fastclass信息，weak技术及时的卸载。</p>
+<p>当然目标类是感知不到这个FastClass动态子类，Cglib内部缓存优化维护了他们之间的映射关系。</p>
+<p>例如：TargetService -&gt; TargetService$$FastClassByCGLIB$$7705815b extends FastClass</p>
+</blockquote>
+<h2 id="测试用例">测试用例</h2>
+<pre><code class="language-java">// 目标类
+public class TargetService {
+   public void say() {
+      System.out.println(&quot;say&quot;);
+   }
+}
+
+// 测试方法
+public class CglibFastDemo {
+	public static void main(String[] args) throws NoSuchMethodException, IllegalAccessException, InvocationTargetException, InstantiationException {
+		System.setProperty(DebuggingClassWriter.DEBUG_LOCATION_PROPERTY, &quot;/Users/shiyuesheng/workspace/github/Spring-Framework/spring-shenge-study&quot;);
+//		reflection();
+		cglibFastClass();
+	}
+
+	private static void reflection() throws NoSuchMethodException, IllegalAccessException, InvocationTargetException, InstantiationException {
+		// 传统的Java 反射
+		Class&lt;TargetService&gt; clazz = TargetService.class;
+		// 获取构造器
+		Constructor&lt;TargetService&gt; constructor = clazz.getDeclaredConstructor(null);
+		TargetService targetService = constructor.newInstance(null);
+		// 获取方法
+		Method method = clazz.getDeclaredMethod(&quot;say&quot;, null);
+		method.invoke(targetService, null);
+	}
+
+	private static void cglibFastClass() throws InvocationTargetException {
+		// Cglib FastClass
+		Class&lt;TargetService&gt; clazz = TargetService.class;
+		// 动态生成FastClass子类
+		FastClass fastClass = FastClass.create(clazz);
+		// 创建实例
+		TargetService targetService = (TargetService) fastClass.newInstance();
+		// 调用方法  第二个参数 Class[] parameterTypes不能 为null
+		fastClass.invoke(&quot;say&quot;, new Class[0], targetService, null);
+	}
+}
+</code></pre>
+<p>测试用例中对传统Java反射、FastClass进行了比对，整体上FastClass的操作流程抽象的跟传统Java反射差不太多，很难看出区别，下面我们逐字逐句的看下 FastClass.create(clazz)、fastClass.invoke() 内部是如何实现的。</p>
+<h2 id="fastclass源码解析">FastClass源码解析</h2>
+<blockquote>
+<p>FastClass.Generator 内部通过ASM字节码框架对目标类定制化的的生成FastClass类型结构的动态子类。内部进行了缓存优化。我们研究下生成的<strong>FastClass动态子类</strong>长什么样子就可以了，至于怎么生成的，那是Cglib跟ASM操作字节码的内部过程，细节太过低层，不做深究。</p>
+<p>FastClass内部定义了很多模板方法，需要<strong>FastClass动态子类</strong>去实现，同时还对这些模板方法进行了组合，方便外部调用。</p>
+<p>注释比较详细，不做进一步的说明。</p>
+</blockquote>
+<pre><code class="language-java">// FastClass abstract修饰，隐含的说明这是个功能抽象的模板类
+public abstract class FastClass {
+
+    // 目标类Class
+    private Class type;
+
+    protected FastClass() {
+        throw new Error(&quot;Using the FastClass empty constructor--please report to the cglib-devel mailing list&quot;);
+    }
+
+    // 构造器，protected修饰，一般是子类调用
+    protected FastClass(Class type) {
+        this.type = type;
+    }
+
+    // FastClass子类的构建方法，核心入口，参数是目标类Class
+    public static FastClass create(Class type) {
+        return create(type.getClassLoader(), type);
+    }
+
+    // FastClass子类的构建方法，核心入口，参数是目标类Class、指定的类加载器
+    public static FastClass create(ClassLoader loader, Class type) {
+        // FastClass子类动态生成器，内部实现太过低层，跳过
+        FastClass.Generator gen = new FastClass.Generator();
+        gen.setType(type);
+        gen.setClassLoader(loader);
+        return gen.create();
+    }
+
+    // 方法调用 - 通过方法名称，参数类型，参数内容，对象实例（这个对象实例必须是FastClass.type-目标类类型）
+    public Object invoke(String name, Class[] parameterTypes, Object obj, Object[] args) throws InvocationTargetException {
+        // this.getIndex 由子类实现，通过方法名称、参数类型，获取方法索引
+        // this.invoke 由子类实现，通过方法索引、对象实例、参数内容 进行方法调用，值得注意的是内部会先对obj进行强制类型转换，转换成FastClass.type类型
+        return this.invoke(this.getIndex(name, parameterTypes), obj, args);
+    }
+
+    // 无参构造器调用
+    public Object newInstance() throws InvocationTargetException {
+        // this.getIndex 由子类实现，通过空的参数类型列表，获取构造器索引
+        // this.newInstance 由子类实现，通过无参构造器索引，空的参数内容调用
+        return this.newInstance(this.getIndex(Constants.EMPTY_CLASS_ARRAY), (Object[])null);
+    }
+
+    // 有参数构造器调用，类比以上，不做赘述
+    public Object newInstance(Class[] parameterTypes, Object[] args) throws InvocationTargetException {
+        return this.newInstance(this.getIndex(parameterTypes), args);
+    }
+
+    // 对传入的Method进行解析，包装，找到对应的方法索引，FastMethod.invoke内部就是通过解析到的方法索引进行快速调用的
+    public FastMethod getMethod(Method method) {
+        return new FastMethod(this, method);
+    }
+
+    // 类比FastMethod.getMethod，不做赘述
+    public FastConstructor getConstructor(Constructor constructor) {
+        return new FastConstructor(this, constructor);
+    }
+
+    // 类比FastMethod.getMethod，不做赘述(内部先是通过Java源生API获取Method，然后走上面的FastMethod.getMethod)
+    public FastMethod getMethod(String name, Class[] parameterTypes) {
+        try {
+            return this.getMethod(this.type.getMethod(name, parameterTypes));
+        } catch (NoSuchMethodException var4) {
+            throw new NoSuchMethodError(var4.getMessage());
+        }
+    }
+
+    // 类比FastMethod.getMethod，不做赘述
+    public FastConstructor getConstructor(Class[] parameterTypes) {
+        try {
+            return this.getConstructor(this.type.getConstructor(parameterTypes));
+        } catch (NoSuchMethodException var3) {
+            throw new NoSuchMethodError(var3.getMessage());
+        }
+    }
+
+    public String getName() {
+        return this.type.getName();
+    }
+
+    public Class getJavaClass() {
+        return this.type;
+    }
+
+    public String toString() {
+        return this.type.toString();
+    }
+
+    public int hashCode() {
+        return this.type.hashCode();
+    }
+
+    public boolean equals(Object o) {
+        return o != null &amp;&amp; o instanceof FastClass ? this.type.equals(((FastClass)o).type) : false;
+    }
+
+    // 子类实现 获取方法索引
+    public abstract int getIndex(String var1, Class[] var2);
+
+    // 子类实现 获取构造器索引
+    public abstract int getIndex(Class[] var1);
+
+    // 子类实现 调用方法
+    public abstract Object invoke(int var1, Object var2, Object[] var3) throws InvocationTargetException;
+
+    // 子类实现 调用构造器
+    public abstract Object newInstance(int var1, Object[] var2) throws InvocationTargetException;
+
+    // 子类实现 获取方法索引，通过方法签名
+    public abstract int getIndex(Signature var1);
+
+    // 子类实现 最大索引值？
+    public abstract int getMaxIndex();
+
+    protected static String getSignatureWithoutReturnType(String name, Class[] parameterTypes) {
+        StringBuffer sb = new StringBuffer();
+        sb.append(name);
+        sb.append('(');
+
+        for(int i = 0; i &lt; parameterTypes.length; ++i) {
+            sb.append(Type.getDescriptor(parameterTypes[i]));
+        }
+
+        sb.append(')');
+        return sb.toString();
+    }
+
+    // FastClass子类动态生成器
+    // 内部通过ASM字节码工具动态的生成字节码，并进行加载、实例化。
+    // 同时内部作了内存缓存优化，
+    public static class Generator extends AbstractClassGenerator {
+        private static final Source SOURCE = new Source(FastClass.class.getName());
+        private Class type;
+
+        public Generator() {
+            super(SOURCE);
+        }
+
+        public void setType(Class type) {
+            this.type = type;
+        }
+
+        // 生成FastClass子类实例的核心入口
+        public FastClass create() {
+            this.setNamePrefix(this.type.getName());
+            return (FastClass)super.create(this.type.getName());
+        }
+
+        protected ClassLoader getDefaultClassLoader() {
+            return this.type.getClassLoader();
+        }
+
+        protected ProtectionDomain getProtectionDomain() {
+            return ReflectUtils.getProtectionDomain(this.type);
+        }
+
+        // 构建FastClass子类字节码的核心入口
+        public void generateClass(ClassVisitor v) throws Exception {
+            new FastClassEmitter(v, this.getClassName(), this.type);
+        }
+
+        // 实例化动态生成的 FastClass子类
+        protected Object firstInstance(Class type) {
+            return ReflectUtils.newInstance(type, new Class[]{Class.class}, new Object[]{this.type});
+        }
+
+        // 实例化动态生成的 FastClass子类
+        protected Object nextInstance(Object instance) {
+            return instance;
+        }
+    }
+
+}
+</code></pre>
+<h2 id="fastmethod源码解析">FastMethod源码解析</h2>
+<blockquote>
+<p>上面FastClass源码中出现了一个FastMethod。Class -&gt; FastClass,   Method -&gt; FastMethod</p>
+<p>FastMethod对应的就是传统的Method，内部持有<strong>FastClass动态子类</strong>实例、传统的Method，对传统的Method进行了包装、解析。FastMethod.invoke调用时，内部就已经是方法索引快速访问机制了。</p>
+</blockquote>
+<pre><code class="language-java">// 将传统的Method包装，解析，转换成FastClass体系的Method
+public class FastMethod extends FastMember {
+
+    //fc - FastClass 动态子类实例
+    //method - 传统的Java Method
+    FastMethod(FastClass fc, Method method) {
+        super(fc, method, helper(fc, method));
+    }
+
+    // 获取传统的Method在FastClass动态子类中对应的方法索引，里面使用到了方法签名
+    // 方法签名类toString 类似于长这样 :
+    // equals(Ljava/lang/Object;)Z
+    // toString()Ljava/lang/String;
+    // hashCode()I
+    // say()V
+    private static int helper(FastClass fc, Method method) {
+        int index = fc.getIndex(new Signature(method.getName(), Type.getMethodDescriptor(method)));
+        if (index &gt;= 0) {
+            return index;
+        } else {
+            Class[] types = method.getParameterTypes();
+            System.err.println(&quot;hash=&quot; + method.getName().hashCode() + &quot; size=&quot; + types.length);
+
+            for(int i = 0; i &lt; types.length; ++i) {
+                System.err.println(&quot;  types[&quot; + i + &quot;]=&quot; + types[i].getName());
+            }
+
+            throw new IllegalArgumentException(&quot;Cannot find method &quot; + method);
+        }
+    }
+
+    public Class getReturnType() {
+        return ((Method)this.member).getReturnType();
+    }
+
+    public Class[] getParameterTypes() {
+        return ((Method)this.member).getParameterTypes();
+    }
+
+    public Class[] getExceptionTypes() {
+        return ((Method)this.member).getExceptionTypes();
+    }
+
+    // 通过方法索引进行调用
+    public Object invoke(Object obj, Object[] args) throws InvocationTargetException {
+        return this.fc.invoke(this.index, obj, args);
+    }
+
+    // 返回持有的传统的JavaMethod
+    public Method getJavaMethod() {
+        return (Method)this.member;
+    }
+
+}
+</code></pre>
+<h2 id="fastclass动态生成的子类字节码解析">FastClass动态生成的子类字节码解析</h2>
+<blockquote>
+<p>FastClass动态子类是Cglib动态生成的，同目标类是一对一的关系。内部对目标类的所有方法、构造器建立了索引。</p>
+<p>通过方法签名、方法名称、参数类型可以获取到对应的方法索引，方法调用就是非常直白的显式调用，绕过了反射机制，这样无疑更加效率。</p>
+</blockquote>
+<pre><code class="language-java">// TargetService 对应的动态生成的 FastClass
+public class TargetService$$FastClassByCGLIB$$7705815b extends FastClass {
+    // 构造器
+    public TargetService$$FastClassByCGLIB$$7705815b(Class var1) {
+        super(var1);
+    }
+
+    // 方法签名获取对应的方法索引，方法签名一般在构造 FastMethod的时候会用到
+    // 里面的逻辑很直白，不坐进一步的分析
+    // 值得注意的是，equals、toString、hashCode也进行了索引
+    public int getIndex(Signature var1) {
+        String var10000 = var1.toString();
+        switch(var10000.hashCode()) {
+        case -909388886:
+            if (var10000.equals(&quot;say()V&quot;)) {
+                return 0;
+            }
+            break;
+        case 1826985398:
+            if (var10000.equals(&quot;equals(Ljava/lang/Object;)Z&quot;)) {
+                return 1;
+            }
+            break;
+        case 1913648695:
+            if (var10000.equals(&quot;toString()Ljava/lang/String;&quot;)) {
+                return 2;
+            }
+            break;
+        case 1984935277:
+            if (var10000.equals(&quot;hashCode()I&quot;)) {
+                return 3;
+            }
+        }
+
+        return -1;
+    }
+
+    // 方法名称 参数类型获取方法索引
+    public int getIndex(String var1, Class[] var2) {
+        switch(var1.hashCode()) {
+        case -1776922004:
+            if (var1.equals(&quot;toString&quot;)) {
+                switch(var2.length) {
+                case 0:
+                    return 2;
+                }
+            }
+            break;
+        case -1295482945:
+            if (var1.equals(&quot;equals&quot;)) {
+                switch(var2.length) {
+                case 1:
+                    if (var2[0].getName().equals(&quot;java.lang.Object&quot;)) {
+                        return 1;
+                    }
+                }
+            }
+            break;
+        case 113643:
+            if (var1.equals(&quot;say&quot;)) {
+                switch(var2.length) {
+                case 0:
+                    return 0;
+                }
+            }
+            break;
+        case 147696667:
+            if (var1.equals(&quot;hashCode&quot;)) {
+                switch(var2.length) {
+                case 0:
+                    return 3;
+                }
+            }
+        }
+
+        return -1;
+    }
+
+    // 参数类型获取构造器索引
+    public int getIndex(Class[] var1) {
+        switch(var1.length) {
+        case 0:
+            return 0;
+        default:
+            return -1;
+        }
+    }
+
+    // 方法调用，非常直白的显式调用，绕过了反射
+    public Object invoke(int var1, Object var2, Object[] var3) throws InvocationTargetException {
+        TargetService var10000 = (TargetService)var2;
+        int var10001 = var1;
+
+        try {
+            switch(var10001) {
+            case 0:
+                var10000.say();
+                return null;
+            case 1:
+                return new Boolean(var10000.equals(var3[0]));
+            case 2:
+                return var10000.toString();
+            case 3:
+                return new Integer(var10000.hashCode());
+            }
+        } catch (Throwable var4) {
+            throw new InvocationTargetException(var4);
+        }
+
+        throw new IllegalArgumentException(&quot;Cannot find matching method/constructor&quot;);
+    }
+
+    // 构造器调用
+    public Object newInstance(int var1, Object[] var2) throws InvocationTargetException {
+        TargetService var10000 = new TargetService;
+        TargetService var10001 = var10000;
+        int var10002 = var1;
+
+        try {
+            switch(var10002) {
+            case 0:
+                var10001.&lt;init&gt;();
+                return var10000;
+            }
+        } catch (Throwable var3) {
+            throw new InvocationTargetException(var3);
+        }
+
+        throw new IllegalArgumentException(&quot;Cannot find matching method/constructor&quot;);
+    }
+
+    // 最大的索引值
+    public int getMaxIndex() {
+        return 3;
+    }
+
+}
+</code></pre>
+
+            </div>
+            
+              <div class="tag-container">
+                
+                  <a href="https://shiyuesheng.github.io/tag/mcczt0zHk/" class="tag">
+                    代理
+                  </a>
+                
+              </div>
+            
+            
+              <div class="next-post">
+                <div class="next">下一篇</div>
+                <a href="https://shiyuesheng.github.io/post/dai-li-jing-jin-xi-lie-liu-cglib-dong-tai-dai-li/">
+                  <h3 class="post-title">
+                    代理精进系列六：Cglib动态代理
+                  </h3>
+                </a>
+              </div>
+            
+
+            
+
+          </div>
+
+        </div>
+      </div>
+    </div>
+
+    <script src="https://unpkg.com/aos@next/dist/aos.js"></script>
+<script type="application/javascript">
+
+AOS.init();
+
+var app = new Vue({
+  el: '#app',
+  data: {
+    menuVisible: false,
+  },
+})
+
+</script>
+
+
+
+
+
+
+  </body>
+</html>

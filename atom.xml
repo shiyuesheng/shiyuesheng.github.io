@@ -2,7 +2,7 @@
 <feed xmlns="http://www.w3.org/2005/Atom">
     <id>https://shiyuesheng.github.io</id>
     <title>玄戈大人</title>
-    <updated>2021-04-25T14:50:04.337Z</updated>
+    <updated>2021-04-25T14:59:51.086Z</updated>
     <generator>https://github.com/jpmonette/feed</generator>
     <link rel="alternate" href="https://shiyuesheng.github.io"/>
     <link rel="self" href="https://shiyuesheng.github.io/atom.xml"/>
@@ -11,1071 +11,2715 @@
     <icon>https://shiyuesheng.github.io/favicon.ico</icon>
     <rights>All rights reserved 2021, 玄戈大人</rights>
     <entry>
-        <title type="html"><![CDATA[代理精进系列一：正向代理和反向代理]]></title>
-        <id>https://shiyuesheng.github.io/post/dai-li-jing-jin-xi-lie-yi-zheng-xiang-dai-li-he-fan-xiang-dai-li/</id>
-        <link href="https://shiyuesheng.github.io/post/dai-li-jing-jin-xi-lie-yi-zheng-xiang-dai-li-he-fan-xiang-dai-li/">
+        <title type="html"><![CDATA[Method运行原理]]></title>
+        <id>https://shiyuesheng.github.io/post/method-yun-xing-yuan-li/</id>
+        <link href="https://shiyuesheng.github.io/post/method-yun-xing-yuan-li/">
         </link>
-        <updated>2021-04-25T14:48:09.000Z</updated>
-        <content type="html"><![CDATA[<h1 id="正向代理和反向代理">正向代理和反向代理</h1>
+        <updated>2021-04-25T14:58:34.000Z</updated>
+        <content type="html"><![CDATA[<h1 id="method运行原理">Method运行原理</h1>
 <blockquote>
-<p>代理技术，其实不只是Java语言特有的技术，其实在互联网早期就已经出现了这种技术。</p>
-<p>在计算机网络层面，常用的代理技术有：正向代理、反向代理和透明代理。最常用到的就是正向代理和反向代理。</p>
-<p><em>版权声明：本文为CSDN博主「Franco蜡笔小强」的原创文章</em></p>
-<p><em>原文链接：https://blog.csdn.net/w372426096/article/details/82659354</em></p>
+<p>这次彻底的梳理下Method从哪里来，invoke内部又是如何调用的，了解了内部的原理后，对我们有什么启发，又或者在今后的使用中可以清醒的意识到其中的坑点，避免错误使用，或者线上出现问题能迅速的联想到这里。</p>
+<p>我们开始吧！我先贴个图</p>
+<figure data-type="image" tabindex="1"><img src="https://tva1.sinaimg.cn/large/008i3skNly1gpv3qezm3kj31ak0u0jzd.jpg" alt="Method.invoke" loading="lazy"></figure>
 </blockquote>
-<h2 id="正向代理">正向代理</h2>
-<p>正向代理（forward proxy）：是一个位于客户端和目标服务器之间的服务器(代理服务器)，为了从目标服务器取得内容，客户端向代理服务器发送一个请求并指定目标，然后代理服务器向目标服务器转交请求并将获得的内容返回给客户端。客户端必须要进行一些特别的配置才能使用正向代理。一般情况下，如果没有特别说明，代理技术默认是指正向代理技术。</p>
-<p>这种代理其实在生活中是比较常见的，比如科学上网技术，其用到的就是代理技术。</p>
-<p>小明想要访问某国外网站，该网站无法在国内直接访问，但是小明可以访问到一个代理服务器，这个代理服务器可以访问到这个国外网站。这样呢，小明对该国外网站的访问就需要通过代理服务器来转发请求，并且该代理服务器也会将请求的响应再返回给小明。这个上网的过程就是用到了正向代理。</p>
-<figure data-type="image" tabindex="1"><img src="https://tva1.sinaimg.cn/large/008i3skNly1gpwdkumj6nj30u00eedjo.jpg" alt="img" loading="lazy"></figure>
-<p>在通过正向代理服务器的时候，目标服务器是不知道真正的客户端是谁的，只知道是代理服务器在发送请求。</p>
-<h3 id="正向代理的用途">正向代理的用途</h3>
-<p>**突破访问限制：**通过代理服务器，可以突破自身IP访问限制，访问国外网站，教育网等。</p>
-<p>最近一些年，随着VPN技术的不断发展，一般的突破访问限制都是通过VPN来实现的，如果你仔细了解一下VPN的话，你会发现，其实VPN也是正向代理的一种实现，其本质上也是一个代理服务器。</p>
-<p>**提高访问速度：**通常代理服务器都设置一个较大的硬盘缓冲区，会将部分请求的响应保存到缓冲区中，当其他用户再访问相同的信息时， 则直接由缓冲区中取出信息，传给用户，以提高访问速度。</p>
-<p>**隐藏客户端真实IP：**上网者也可以通过这种方法隐藏自己的IP，免受攻击。</p>
-<h2 id="反向代理">反向代理</h2>
-<p>反向代理（reverse proxy）：是指以代理服务器来接受internet上的连接请求，然后将请求转发给内部网络上的服务器，并将从服务器上得到的结果返回给internet上请求连接的客户端，此时代理服务器对外就表现为一个反向代理服务器。</p>
-<p>对于常用的场景，就是我们在Web开发中用到的负载均衡服务器，客户端发送请求到负载均衡服务器上，负载均衡服务器再把请求转发给一台真正的服务器来执行，再把执行结果返回给客户端。</p>
-<figure data-type="image" tabindex="2"><img src="https://tva1.sinaimg.cn/large/008i3skNly1gpwdkyx3a0j30u00dpgpr.jpg" alt="img" loading="lazy"></figure>
-<p>前面我们说过，通过正向代理服务器访问目标服务器，目标服务器是不知道真正的客户端是谁的，甚至不知道访问自己的是一个代理。而通过反向代理服务器访问目标服务器时，客户端是不知道真正的目标服务器是谁的，甚至不知道自己访问的是一个代理。这也是正向代理和反向代理的区别。</p>
-<h3 id="反向代理的用途">反向代理的用途</h3>
-<p>**隐藏服务器真实IP：**使用反向代理，可以对客户端隐藏服务器的IP地址。</p>
-<p>**负载均衡：**反向代理服务器可以做负载均衡，根据所有真实服务器的负载情况，将客户端请求分发到不同的真实服务器上。</p>
-<p>**提高访问速度：**反向代理服务器可以对于静态内容及短时间内有大量访问请求的动态内容提供缓存服务，提高访问速度。</p>
-<p>**提供安全保障：**反向代理服务器可以作为应用层防火墙，为网站提供对基于Web的攻击行为（例如DoS/DDoS）的防护，更容易排查恶意软件等。还可以为后端服务器统一提供加密和SSL加速（如SSL终端代理），提供HTTP访问认证等。</p>
-]]></content>
-    </entry>
-    <entry>
-        <title type="html"><![CDATA[Lambda系列五：方法引用解析实战]]></title>
-        <id>https://shiyuesheng.github.io/post/fang-fa-yin-yong-jie-xi-shi-zhan/</id>
-        <link href="https://shiyuesheng.github.io/post/fang-fa-yin-yong-jie-xi-shi-zhan/">
-        </link>
-        <updated>2021-04-02T06:32:16.000Z</updated>
-        <content type="html"><![CDATA[<blockquote>
-<p>这次目的很明确，解析支持序列化的方法引用，突破点在生成的内部类中序列化相关的SerializedLambda对象。重新回顾下方法引用的序列化过程：</p>
-<p>**序列化：**方法引用对应的实例 &gt;&gt;&gt; writeReplace() &gt;&gt;&gt; SerializedLambda对象 &gt;&gt;&gt; 序列化数据</p>
-<p>**反序列化：**序列化数据 &gt;&gt;&gt; SerializedLambda对象 &gt;&gt;&gt; readResolve() &gt;&gt;&gt; 方法引用对应的实例</p>
-<p>虽然序列化过程依托于 SerializedLambda，但是逻辑是在JDK内部实现的，对我们是透明的，该怎么从中见过程中窃取 SerializedLambda对象呢？</p>
-<p>一是重写 SerializedLambda 类，删除readResolve()方法，这样就切断了后续的转化。</p>
-<p>二是使用反射直接调用writeReplace()方法，获取SerializedLambda对象。</p>
-</blockquote>
-<h2 id="重写-serializedlambda">重写 SerializedLambda</h2>
-<p>重写 SerializedLambda 类，存在一个问题需要解决，就是 <strong>序列化数据 &gt;&gt;&gt; SerializedLambda对象</strong> 过程中，生成的是java.lang.invoke.SerializedLambda。该怎么转化成我们自己重写的 SerializedLambda类呢？</p>
-<p>JDK已经解决了这个问题，下面介绍这个方法：<strong>java.io.ObjectInputStream.resolveclass(objectstreamclass desc)</strong></p>
-<blockquote>
-<p><code>protected class resolveclass(objectstreamclass desc) throws ioexception, classnotfoundexception</code></p>
-<p>加载与指定的流类描述等效的本地类。 子类可以实现此方法，以允许从备用源中获取类。ObjectOutputStream的相应方法是annotateClass 。</p>
-<p>对于流中的每个唯一类，此方法将仅被调用一次。 该方法可以由子类实现以使用备用加载机制，但必须返回Class对象。</p>
-<p>返回后，如果该类不是数组类，则将其serialVersionUID与序列化类的serialVersionUID进行比较，如果不匹配，则反序列化将失败并抛出InvalidClassException 。</p>
-</blockquote>
-<p>简单的理解：只要类描述等效（类名、属性），serialVersionUID一致，方法不重要，那么就可以狸猫换太子。</p>
-<p>上代码：</p>
-<pre><code class="language-java">/**
- * @author : Shi Yue Sheng
- * @date : 2021/3/29
- * @time : 10:57 下午
- * @desc : 通过序列化方式解析Lambda表达式
- * 如果 lambda 实例对象中有捕获到其他对象实例，那么被捕获到的对象实例也必须支持序列化
- * 否则抛出 {@link NotSerializableException}
- */
-@Component
-public class LambdaSerializableParse {
-
-    /**
-     * 序列化反序列化的方式解析 lambda
-     *
-     * @param lambda 实例对象
-     * @return 返回解析后的 自定义 SerializedLambda
-     */
-    @Override
-    public SerializedLambda doParse(SFunction lambda) {
-        if (!lambda.getClass().isSynthetic()) {
-            throw new RuntimeException(&quot;该方法仅能传入 lambda 表达式产生的合成类&quot;);
-        }
-        try (ObjectInputStream objIn = new ObjectInputStream(new ByteArrayInputStream(serialize(lambda))) {
-            @Override
-            protected Class&lt;?&gt; resolveClass(ObjectStreamClass objectStreamClass) throws IOException, ClassNotFoundException {
-                Class&lt;?&gt; clazz = super.resolveClass(objectStreamClass);
-                return clazz == java.lang.invoke.SerializedLambda.class ? SerializedLambda.class : clazz;
-            }
-        }) {
-            return (SerializedLambda) objIn.readObject();
-        } catch (ClassNotFoundException | IOException e) {
-            throw new RuntimeException(&quot;检查表达式是否规范&quot;, e);
-        }
+<p>再来个简单案例</p>
+<pre><code class="language-java">public class MethodTest1 {
+    public void say() {
+        System.out.println(&quot;hello&quot;);
     }
 
-    /**
-     * 将给定对象序列化为字节数组。
-     *
-     * @param object – 要序列化的对象
-     * @return 对象的字节数组
-     */
-    private byte[] serialize(Object object) {
-        if (Objects.isNull(object)) {
-            return null;
-        }
-        ByteArrayOutputStream baos = new ByteArrayOutputStream(1024);
-        try {
-            ObjectOutputStream oos = new ObjectOutputStream(baos);
-            oos.writeObject(object);
-            oos.flush();
-        } catch (IOException ex) {
-            throw new IllegalArgumentException(&quot;Failed to serialize object of type: &quot; + object.getClass(), ex);
-        }
-        return baos.toByteArray();
+    public static void main(String[] args) throws NoSuchMethodException, InvocationTargetException, IllegalAccessException {
+        Method method = MethodTest1.class.getDeclaredMethod(&quot;say&quot;, new Class[0]);
+        method.invoke(new MethodTest1(), new Object[0]);
     }
 }
 </code></pre>
-<h2 id="反射调用writereplace">反射调用writeReplace</h2>
-<p>通过反射机制调用lambda实例的writeReplace方法，返回java.lang.invoke.SerializedLambda对象</p>
-<p>上代码：</p>
-<pre><code class="language-java">/**
- * @author : Shi Yue Sheng
- * @date : 2021/3/29
- * @time : 10:57 下午
- * @desc : 通过反射方式解析Lambda表达式
- */
-@Component
-public class LambdaReflectionParse {
-
-    /**
-     * @param lambda 实例对象
-     * @return 返回解析后的 JDK SerializedLambda
-     */
-    @Override
-    public SerializedLambda doParse(SFunction lambda) {
-        if (!lambda.getClass().isSynthetic()) {
-            throw new RuntimeException(&quot;该方法仅能传入 lambda 表达式产生的合成类&quot;);
-        }
-        try {
-            // MethodHandles调用匿名内部类的私有方法访问受限，no private access for invokespecial，尚未找到解决办法
-            //return (SerializedLambda) MethodHandles.lookup()
-            //        .findSpecial(lambda.getClass(), &quot;writeReplace&quot;, MethodType.methodType(Object.class), lambda.getClass())
-            //        .invoke(lambda);
-
-            //传统的反射调用
-            Method method = lambda.getClass().getDeclaredMethod(&quot;writeReplace&quot;);
-            method.setAccessible(Boolean.TRUE);
-            return (SerializedLambda) method.invoke(lambda);
-        } catch (Throwable e) {
-            throw new RuntimeException(&quot;检查表达式是否规范&quot;, e);
+<h2 id="classgetdeclaredmethod">Class.getDeclaredMethod</h2>
+<p><strong>java.lang.Class#getDeclaredMethod</strong>，获取单个Method的入口，我们分析下内部的逻辑。</p>
+<pre><code class="language-java">public Method getDeclaredMethod(String name, Class&lt;?&gt;... parameterTypes)
+    throws NoSuchMethodException, SecurityException {
+    checkMemberAccess(Member.DECLARED, Reflection.getCallerClass(), true);
+    //主要流程
+    Method method = searchMethods(privateGetDeclaredMethods(false), name, parameterTypes);
+    if (method == null) {
+        throw new NoSuchMethodException(getName() + &quot;.&quot; + name + argumentTypesToString(parameterTypes));
+    }
+    return method;
+}
+</code></pre>
+<p>自动忽略主流程不相干的代码，最主要的就是这一行：</p>
+<p><code>Method method = searchMethods(privateGetDeclaredMethods(false), name, parameterTypes);</code></p>
+<p>包含了两部分逻辑，先获取所有的Methods，然后进行筛选。</p>
+<p><strong>java.lang.Class#privateGetDeclaredMethods</strong></p>
+<pre><code class="language-java">private Method[] privateGetDeclaredMethods(boolean publicOnly) {
+    checkInitted();
+    Method[] res;
+    //主要流程
+    ReflectionData&lt;T&gt; rd = reflectionData();
+    if (rd != null) {
+        res = publicOnly ? rd.declaredPublicMethods : rd.declaredMethods;
+        if (res != null) return res;
+    }
+    //主要流程
+    // No cached value available; request value from VM
+    res = Reflection.filterMethods(this, getDeclaredMethods0(publicOnly));
+    if (rd != null) {
+        if (publicOnly) {
+            rd.declaredPublicMethods = res;
+        } else {
+            rd.declaredMethods = res;
         }
     }
+    return res;
+}
+</code></pre>
+<p>整体逻辑先去查找缓存，缓存失效或者缓存中不存在，再去JVM中抓取Methods，然后赋值到缓存并返回。</p>
+<p>先来看下里面用到的ReflectionData长什么样子：</p>
+<p><strong>ReflectionData</strong></p>
+<pre><code class="language-java">private volatile transient SoftReference&lt;ReflectionData&lt;T&gt;&gt; reflectionData;
+private static class ReflectionData&lt;T&gt; {
+    volatile Field[] declaredFields;
+    volatile Field[] publicFields;
+    volatile Method[] declaredMethods;
+    volatile Method[] publicMethods;
+    volatile Constructor&lt;T&gt;[] declaredConstructors;
+    volatile Constructor&lt;T&gt;[] publicConstructors;
+    // Intermediate results for getFields and getMethods
+    volatile Field[] declaredPublicFields;
+    volatile Method[] declaredPublicMethods;
+    volatile Class&lt;?&gt;[] interfaces;
+
+    // Value of classRedefinedCount when we created this ReflectionData instance
+    final int redefinedCount;
+
+    ReflectionData(int redefinedCount) {
+        this.redefinedCount = redefinedCount;
+    }
+}
+</code></pre>
+<p>芜湖~原来如此，这里面缓存的不就是我们常用的反射相关的数据吗？那这些数据是怎么来的呢？</p>
+<p>注意注意注意：Class对象中持有的reflectionData是一个软引用，当JVM内存紧张（或者时间过长，通过LRU算法，考虑 -XX:SoftRefLRUPolicyMSPerMB=XXX参数）会对这些数据进行回收。</p>
+<p>回过头，看之前的privateGetDeclaredMethods逻辑，reflectionData初始状态是没有数据的，逻辑会继续往下走，出现了一个烦人的native方法，后面的不去想了，从JVM中拉取数据。</p>
+<pre><code class="language-java">private native Method[]      getDeclaredMethods0(boolean publicOnly);
+</code></pre>
+<p>再往会看之前的getDeclaredMethod，获取到所有的Method之后根据方法参数进行筛选</p>
+<p><strong>java.lang.Class#searchMethods</strong></p>
+<pre><code class="language-java">private static Method searchMethods(Method[] methods,
+                                    String name,
+                                    Class&lt;?&gt;[] parameterTypes)
+{
+    Method res = null;
+    String internedName = name.intern();
+    for (int i = 0; i &lt; methods.length; i++) {
+        Method m = methods[i];
+        if (m.getName() == internedName
+            &amp;&amp; arrayContentsEq(parameterTypes, m.getParameterTypes())
+            &amp;&amp; (res == null
+                || res.getReturnType().isAssignableFrom(m.getReturnType())))
+            res = m;
+    }
+	//主要流程
+    return (res == null ? res : getReflectionFactory().copyMethod(res));
+}
+</code></pre>
+<p>最重要的是最后一行的最后面 getReflectionFactory().copyMethod(res)，一路点进去看看到底作了什么操作，最终调进了Method的copy方法。</p>
+<p><strong>java.lang.reflect.Method#copy</strong></p>
+<pre><code class="language-java">Method copy() {
+    if (this.root != null)
+        throw new IllegalArgumentException(&quot;Can not copy a non-root Method&quot;);
+
+    Method res = new Method(clazz, name, parameterTypes, returnType,
+                            exceptionTypes, modifiers, slot, signature,
+                            annotations, parameterAnnotations, annotationDefault);
+    res.root = this;
+    // Might as well eagerly propagate this if already present
+    res.methodAccessor = methodAccessor;
+    return res;
+}
+</code></pre>
+<p>重新创建了一个Method，并将root指向了缓存中ReflectionData对应的那个Method，同时把缓存中的methodAccessor引用了过来，这个在后面的invoke中会用到。</p>
+<p>到这就分析的差不多了，需要注意的是：</p>
+<ul>
+<li>Class用到了SoftReference来缓存数据，并不是每一次都去JVM拉取数据；</li>
+<li>每次从Class获取Method并不是直接使用的缓存数据，而是Copy出来了一个新的Method实例，root的副本；</li>
+</ul>
+<p>软引用会存在失效被回收的问题，重新从JVM拉取就是新的数据了；getDeclaredMethod频繁的调用会消耗更多的资源。</p>
+<p>接下来在分析下调用流程</p>
+<h2 id="methodinvoke">Method.invoke</h2>
+<p>java.lang.reflect.Method#invoke</p>
+<pre><code class="language-java">public Object invoke(Object obj, Object... args)
+    throws IllegalAccessException, IllegalArgumentException,
+       InvocationTargetException
+{
+    if (!override) {
+        if (!Reflection.quickCheckMemberAccess(clazz, modifiers)) {
+            Class&lt;?&gt; caller = Reflection.getCallerClass();
+            checkAccess(caller, clazz, obj, modifiers);
+        }
+    }
+    //主要流程
+    MethodAccessor ma = methodAccessor;             // read volatile
+    if (ma == null) {
+        //主要流程
+        ma = acquireMethodAccessor();
+    }
+    //主要流程
+    return ma.invoke(obj, args);
+}
+</code></pre>
+<p>整体逻辑是使用MethodAccessor进行进一步的调用，如果当前this.MethodAccessor不存在，就去获取。</p>
+<p>先看下MethodAccessor是如何获取的</p>
+<p><strong>java.lang.reflect.Method#acquireMethodAccessor</strong></p>
+<pre><code class="language-java">private MethodAccessor acquireMethodAccessor() {
+    // First check to see if one has been created yet, and take it
+    // if so
+    MethodAccessor tmp = null;
+    if (root != null) tmp = root.getMethodAccessor();
+    if (tmp != null) {
+        methodAccessor = tmp;
+    } else {
+        // Otherwise fabricate one and propagate it up to the root
+        // 否则，创建一个并传播到根
+        tmp = reflectionFactory.newMethodAccessor(this);
+        setMethodAccessor(tmp);
+    }
+
+    return tmp;
+}
+
+</code></pre>
+<p>整体逻辑是先从根Method获取MethodAccessor，有就用并且赋值给当前的Method；没有就创建一个，然后赋值给根Method。看下MethodAccessor是如何创建的</p>
+<p><strong>sun.reflect.ReflectionFactory#newMethodAccessor</strong></p>
+<pre><code class="language-java">public MethodAccessor newMethodAccessor(Method var1) {
+    checkInitted();
+    if (noInflation &amp;&amp; !ReflectUtil.isVMAnonymousClass(var1.getDeclaringClass())) {
+        return (new MethodAccessorGenerator()).generateMethod(var1.getDeclaringClass(), var1.getName(), var1.getParameterTypes(), var1.getReturnType(), var1.getExceptionTypes(), var1.getModifiers());
+    } else {
+        NativeMethodAccessorImpl var2 = new NativeMethodAccessorImpl(var1);
+        DelegatingMethodAccessorImpl var3 = new DelegatingMethodAccessorImpl(var2);
+        var2.setParent(var3);
+        return var3;
+    }
+}
+
+</code></pre>
+<p>一般情况是不走上面的逻辑，noInflation默认是false，可以通过 -Dsun.reflect.noInflation=true 对JVM设置。</p>
+<p>下面的逻辑比较简单，新建一个DelegatingMethodAccessorImpl，看名字就只到是一个委托类。新建一个NativeMethodAccessorImpl传递给委托类，最终返回了这个委托类DelegatingMethodAccessorImpl</p>
+<p>回到java.lang.reflect.Method#invoke逻辑，此时已经拿到了MethodAccessor，其实就是DelegatingMethodAccessorImpl，内部包含了NativeMethodAccessorImpl，看下是怎么invoke的</p>
+<pre><code class="language-java">class DelegatingMethodAccessorImpl extends MethodAccessorImpl {
+    private MethodAccessorImpl delegate;
+
+    DelegatingMethodAccessorImpl(MethodAccessorImpl var1) {
+        this.setDelegate(var1);
+    }
+
+    public Object invoke(Object var1, Object[] var2) throws IllegalArgumentException, InvocationTargetException {
+        return this.delegate.invoke(var1, var2);
+    }
+
+    void setDelegate(MethodAccessorImpl var1) {
+        this.delegate = var1;
+    }
+}
+
+</code></pre>
+<p>DelegatingMethodAccessorImpl很光棍啊，顺手转给了delegate - NativeMethodAccessorImpl，继续invoke</p>
+<pre><code class="language-java">class NativeMethodAccessorImpl extends MethodAccessorImpl {
+    private final Method method;
+    private DelegatingMethodAccessorImpl parent;
+    private int numInvocations;
+
+    NativeMethodAccessorImpl(Method var1) {
+        this.method = var1;
+    }
+
+    public Object invoke(Object var1, Object[] var2) throws IllegalArgumentException, InvocationTargetException {
+        if (++this.numInvocations &gt; ReflectionFactory.inflationThreshold() &amp;&amp; !ReflectUtil.isVMAnonymousClass(this.method.getDeclaringClass())) {
+            MethodAccessorImpl var3 = (MethodAccessorImpl)(new MethodAccessorGenerator()).generateMethod(this.method.getDeclaringClass(), this.method.getName(), this.method.getParameterTypes(), this.method.getReturnType(), this.method.getExceptionTypes(), this.method.getModifiers());
+            this.parent.setDelegate(var3);
+        }
+
+        return invoke0(this.method, var1, var2);
+    }
+
+    void setParent(DelegatingMethodAccessorImpl var1) {
+        this.parent = var1;
+    }
+
+    private static native Object invoke0(Method var0, Object var1, Object[] var2);
+}
+
+</code></pre>
+<p>这个稍微有些复杂了，一步步解析，先看下他的属性</p>
+<ul>
+<li>Method method - 这个就是源头的发起invoke 的Method</li>
+<li>DelegatingMethodAccessorImpl parent - 包含他的DelegatingMethodAccessorImpl</li>
+<li>numInvocations - 调用次数累计</li>
+</ul>
+<p>invoke里面有两条分支，下面的invoke0是直接找JVM去了，native的类调用native的方法很合理。</p>
+<p>那什么时候走上面的分支呢？++this.numInvocations &gt; ReflectionFactory.inflationThreshold()，inflationThreshold 膨胀阈值，很形象，默认值是15，可以通过 -Dsun.reflect.inflationThreshold=999 进行设置（后面的那个条件不太明白啊，一般是不会对条件造成影响）。</p>
+<p>内部是使用生成器MethodAccessorGenerator生成了一个MethodAccessorImplXXX，然后把这个新生成的MethodAccessorImplXXX赋值给了DelegatingMethodAccessorImpl，也就意味着下次invoke调用就不走NativeMethodAccessorImpl，而是走新生成的MethodAccessorImplXXX。</p>
+<p>来看下这个打动干戈，一般不会生成的MethodAccessorImplXXX到底是个啥？下面我把关键的代码截取一下，因为太多了</p>
+<pre><code class="language-java">private MagicAccessorImpl generate(final Class&lt;?&gt; var1, String var2, Class&lt;?&gt;[] var3, Class&lt;?&gt; var4, Class&lt;?&gt;[] var5, int var6, boolean var7, boolean var8, Class&lt;?&gt; var9) {
+    	ByteVector var10 = ByteVectorFactory.create();
+    	// 中间是很长的字节码生成代码，var17就是动态生成的类的class数据流
+        final byte[] var17 = var10.getData();
+        return (MagicAccessorImpl)AccessController.doPrivileged(new PrivilegedAction&lt;MagicAccessorImpl&gt;() {
+            public MagicAccessorImpl run() {
+                try {
+                    // 重要逻辑
+                    return (MagicAccessorImpl)ClassDefiner.defineClass(var13, var17, 0, var17.length, var1.getClassLoader()).newInstance();
+                } catch (IllegalAccessException | InstantiationException var2) {
+                    throw new InternalError(var2);
+                }
+            }
+        });
+}
+
+class ClassDefiner {
+    static final Unsafe unsafe = Unsafe.getUnsafe();
+
+    static Class&lt;?&gt; defineClass(String var0, byte[] var1, int var2, int var3, final ClassLoader var4) {
+        ClassLoader var5 = (ClassLoader)AccessController.doPrivileged(new PrivilegedAction&lt;ClassLoader&gt;() {
+            public ClassLoader run() {
+                 // 重要逻辑
+                return new DelegatingClassLoader(var4);
+            }
+        });
+        return unsafe.defineClass(var0, var1, var2, var3, var5, (ProtectionDomain)null);
+    }
+}
+
+</code></pre>
+<p>MethodAccessorImplXXX是通过字节码技术动态生成的类，然后对应的创建一个DelegatingClassLoader来加载的这个类。一对一，生成一次，就new一个加载器加载，加载器不卸载，那这个新的class也不会卸载。</p>
+<p>那这个MethodAccessorImplXXX到底长什么样呢，这里我引用别人的一个图：<br>
+<img src="https://tva1.sinaimg.cn/large/008i3skNly1gpv64ft0rgj30kc0foq3m.jpg" alt="9.jpg" loading="lazy"></p>
+<p>看最后的 target.methodXXX(arg0)</p>
+<p>芜湖，原来如此，如此的直白，新生成的类，又回归了原始，回归了具体，这不就是我们普通的类实例到方法的调用嘛？</p>
+<p>从一开始的具体调用，到抽象到Method模糊调用，然后为了优化调用效率，通过动态的构建类，又回归了具体的调用。完整的轮回。</p>
+<h2 id="总结">总结</h2>
+<h3 id="结构图">结构图</h3>
+<figure data-type="image" tabindex="2"><img src="https://tva1.sinaimg.cn/large/008i3skNly1gpv3qezm3kj31ak0u0jzd.jpg" alt="Method.invoke" loading="lazy"></figure>
+<h3 id="流程梳理">流程梳理：</h3>
+<ul>
+<li>
+<p>Method获取流程：先去CLass中的ReflectionData(软引用缓存)获取，如果不存在就去JVM中拉取；如果存在，就Copy-New一个新的Method出来；</p>
+</li>
+<li>
+<p>Method调用流程：内部委托给了MethodAccessor，默认实现是DelegatingMethodAccessorImpl，初始情况是再次委托给NativeMethodAccessorImpl去调用JVM，多次调用之后(默认15)之后，进行优化，转换为一个通过字节码技术动态生成的类GeneratedMethodAccessorXXX，同时给它安排一个新建的DelegatingClassLoader进行加载。</p>
+<p>GeneratedMethodAccessorXXX内部通过类型强制转换成原始类对象，进行硬编码调用，而不再是抽象的Method.invoke</p>
+</li>
+</ul>
+<h3 id="隐藏风险">隐藏风险</h3>
+<ul>
+<li>获取风险：每次通过Class获取Method都是Copy-New出来的。ReflectionData是软引用，时机一到就会被回收。</li>
+<li>调用风险：调用的整个过程是没有加锁的，高并发场景下会出现资源浪费的情况
+<ul>
+<li>100个线程同时获取Method，同时invoke，同时创建MethodAccessor，造成的结果就是每个Method的DelegatingMethodAccessorImpl都是不同的，如果每个Method调用超过15次，就会构建100动态GeneratedMethodAccessorXXX.class，对应100个加载器。呵呵，所以啊，这个Method拿到手就尽量缓存起来。</li>
+<li>正常情况大家用的是同一个Method，但是高并发场景还是会存在问题。100个线程执行到15次阈值的逻辑，都去动态的创建、加载GeneratedMethodAccessorXXX.class，虽然最终用的是其中的一个，但是剩余的99个Class已经存储在方法区了（Metaspace）。垃圾收集器对类进行卸载的条件就比较苛刻了，这个区域满了不用多说了吧。FullGC</li>
+</ul>
+</li>
+<li>综合风险：如果没有那么高的并发也是会存在风险，从上面的分析了解到获取的Method都是来自Class的软引用ReflectionData，这个数据的垃圾回收跟存在时间，已经内存是否紧张有关，也可以用过-XX:SoftRefLRUPolicyMSPerMB=0进行调整，这个参数如果设置为0，那就是SoftReference所引用的对象在下一GC就会被回收，无法跨GC周期。如果ReflectionData经常失效，从JVM拉取新的Method，那对应的invoke时的调用次数从新计算，15次之后重新动态的创建、加载GeneratedMethodAccessorXXX.class，这些会慢慢的累积到方法区（Metaspace）。</li>
+</ul>
+<blockquote>
+<p><strong>补充知识点：</strong></p>
+<p>所谓的软引用，正常情况下不会回收，但是如果内存比较紧张的时候就会回收这些对象。<br>
+那么SoftReference对象到底在GC的时候要不要回收是通过什么公式来判断的呢？<br>
+是如下的一个公式：<br>
+clock - timestamp &lt;= freespace * SoftRefLRUPolicyMSPerMB。<br>
+这个公式的意思就是说，“clock - timestamp”代表了一个软引用对象他有多久没被访问过了，freespace代表JVM中的空闲内存空间，SoftRefLRUPolicyMSPerMB代表每一MB空闲内存空间可以允许SoftReference对象存活多久。</p>
+<p>举个例子:</p>
+<p>JVM内存空间2000Mb，SoftRefLRUPolicyMSPerMB默认值1000毫秒，那被SoftReference应用的对象存活时间是</p>
+<p>​											2000Mb * 1000毫秒 = 2000秒 ~ 33分钟</p>
+</blockquote>
+<h3 id="cms-g1垃圾收集器的表现">CMS G1垃圾收集器的表现</h3>
+<ul>
+<li>CMS  JDK7、8普通GC会对类进行卸载</li>
+<li>G1 JDK7的时候普通GC不会进行类卸载，只会在FullGC的时候卸载类。JDK8普通GC会对类进行卸载</li>
+</ul>
+<h3 id="重要参数">重要参数</h3>
+<p>-Dsun.reflect.noInflation=false，是否膨胀， 默认是false，如果为true会跳过15次膨胀的过程，直接一步到位动态的生成类</p>
+<p>-Dsun.reflect.inflationThreshold=15，膨胀阈值，默认是15，超过阈值，会进行调用过程优化，动态生成类；如果设置为0，那就跟上面的noInflation=true没什么区别了</p>
+<p>-XX:SoftRefLRUPolicyMSPerMB=1000，软应用的存货时间，内部通过LRU最近最少访问算法实现。</p>
+]]></content>
+    </entry>
+    <entry>
+        <title type="html"><![CDATA[代理精进系列十：JDK&Cglib动态代理对比]]></title>
+        <id>https://shiyuesheng.github.io/post/dai-li-jing-jin-xi-lie-shi-jdkandcglib-dong-tai-dai-li-dui-bi/</id>
+        <link href="https://shiyuesheng.github.io/post/dai-li-jing-jin-xi-lie-shi-jdkandcglib-dong-tai-dai-li-dui-bi/">
+        </link>
+        <updated>2021-04-25T14:57:55.000Z</updated>
+        <content type="html"><![CDATA[<h1 id="jdkcglib动态代理对比">JDK&amp;Cglib动态代理对比</h1>
+<h2 id="jdk">JDK</h2>
+<ol>
+<li><strong>基本原理</strong>------Java动态代理只能够对接口进行代理，不能对普通的类进行代理（因为Java动态代理生成的代理类的父类为Proxy，Java类继承机制不允许多重继承）；CGLIB能够代理普通类。</li>
+<li><strong>生成过程</strong>------Java动态代理使内置了生成代理类的代码模板，生成逻辑较简单，生成的代理类结构、体量较小，在生成类过程中比较高效。</li>
+<li><strong>调用过程</strong>------代理方法最终是通过传统的Java反射，Method.invoke执行的，执行逻辑较为复杂，在执行效率上进行了优化，但同时因为优化造成了一定的风险。</li>
+</ol>
+<h2 id="cglib">Cglib</h2>
+<ol>
+<li><strong>基本原理</strong>------cglib可以为普通类、接口类创建代理。普通类代理是通过继承来实现的。相当于给需要被代理的类创建了一个子类，然后会重写父类中的方法，来进行增强。继承的特性大家应该都知道，遵循Java基本语法，会有如下限制：
+<ul>
+<li>final修饰的类是不能被继承的，</li>
+<li>final修饰的方法不能被重写，</li>
+<li>static修饰的方法也不能被重写，</li>
+<li>private修饰的方法也不能被子类重写。</li>
+</ul>
+</li>
+<li><strong>生成过程-</strong>-----cglib通过ASM字节码工具生成代理子类，生成逻辑复杂，生成的代理类结构、体量较大。FastClass机制会同时为目标类，代理类生成对应的FastClass子类。所以生成过程相对更加繁琐，效率更低，占用更多的方法区内存资源。当然内部过了优化，比如缓存生成的class，防止多次生成浪费时间成本。</li>
+<li><strong>调用过程</strong>------代理方法最终是通过FastClass快速索引机制进行调用，就相当于我们平常写的方法调用，这无疑是非常高效的。</li>
+</ol>
+<p>Method运行也做了优化，也有类似FastClass这样的硬编码直接调用，但内部逻辑存在一定的风险，想了解更多看我之前的文章</p>
+]]></content>
+    </entry>
+    <entry>
+        <title type="html"><![CDATA[代理精进系列九：Cglib动态代理原理（二）]]></title>
+        <id>https://shiyuesheng.github.io/post/dai-li-jing-jin-xi-lie-jiu-cglib-dong-tai-dai-li-yuan-li-er/</id>
+        <link href="https://shiyuesheng.github.io/post/dai-li-jing-jin-xi-lie-jiu-cglib-dong-tai-dai-li-yuan-li-er/">
+        </link>
+        <updated>2021-04-25T14:56:41.000Z</updated>
+        <content type="html"><![CDATA[<h1 id="cglib动态代理原理二">Cglib动态代理原理（二）</h1>
+<blockquote>
+<p>梳理下代理流程：</p>
+<ol>
+<li>Enhancer通过ASM解码框架动态的为目标基类或者接口生成一个新的代理类。</li>
+<li>新的代理类继承或者实现了目标类，持有拦截器，覆盖了相同签名的方法，同时伴生出CGLIB$XXX$0命名的方法，内部直接调用父类XXX方法。</li>
+<li>新的代理类对每个方法进行了拦截，并传入了当前代理类实例、方法实参、Method、MethodProxy。</li>
+<li>MethodProxy内部构造目标类、代理类的FastClass，并且持有相同签名方法、伴生CGLIB$XXX$0方法的快速访问索引。</li>
+<li>拦截器可以控制目标类实例的生命周期，这意味着可以持有一个目标类实例，这个实例可以变化，也可以是不变的。可以使事先创建好的，也可以是拦截时才进行的延迟加载。甚至可以是不存在这个目标类实例。</li>
+</ol>
+</blockquote>
+<p>Cglib动态代理结构图</p>
+<figure data-type="image" tabindex="1"><img src="https://tva1.sinaimg.cn/large/008i3skNly1gptcd234mmj30vv0rbq6h.jpg" alt="Cglib动态代理" loading="lazy"></figure>
+<h2 id="objenesis">objenesis</h2>
+<p>spring集成了Objenesis库，这个库的功能相当强大，个人认为是JVM开设的一个大后门。</p>
+<p>思考一下，一个类没有无参构造器，如何进行实例化呢？new Service()会报错，常规的反射也查询不到无参构造器。</p>
+<p>Objenesis就可以，甚至你有无参构造器，我都不用。具体的实现原理我没有深入了解，大体就是通过JVM内部机制构建了一个新的、不是传统反射的无参构造器，通过这个构造器进行的实例化，那可想而知这个构造器就是个空壳。我们自己写构造器可以在内部对一些属性进行初始化赋值，这个新生成的构造器显然是没有这些的。</p>
+<p>那问题来了，什么样的场景才会走这么偏僻的后门呢？我知道的一个，同时也是Sping正在用的场景就是AOP动态代理。</p>
+<p>SpringAOP在bean实例化初始化完成之后进行的增强，springbean是支持构造器注入的，代理子类继承了springbean。我创建代理子类实例时并不想在走一遍构造器注入，只想简单的通过无参构造器创建一个实例。所以在spring4之前，AOP代理的spring bean是必须要存在一个可访问的无参构造器的。</p>
+<p>spring4之后引入了Objenesis，可以绕过有没有无参构造器这个事，允许直接创建一个动态类实例，所以现在被代理的spring bean不需要提供无参构造器了，提供了也不会再实例化代理子类时调用。</p>
+<h4 id="下面看一下objenesis简单应用">下面看一下Objenesis简单应用：</h4>
+<pre><code class="language-java">public class TargetService {
+	private String name;
+//	public TargetService() {
+//		System.out.println(&quot;无参构造器&quot;);
+//		this.name = &quot;目标类-玄戈大人&quot;;
+//	}
+	public TargetService(String name) {
+		System.out.println(&quot;有参构造器&quot;);
+		this.name = &quot;目标类-&quot; + name;
+	}
+	public void say() {
+		System.out.println(&quot;目标类 - say&quot;);
+	}
+}
+
+public class ObjenesisDemo {
+	/**
+	 * 如果一个类没有无参构造器，也可以通过Objenesis创建实例
+	 * 通过Objenesis创建实例，哪怕存在无参构造器，也不会使用的
+	 */
+	public static void main(String[] args) {
+		Objenesis objenesis = new ObjenesisStd();
+		TargetService targetService = objenesis.newInstance(TargetService.class);
+		targetService.say();
+
+		//另一种写法
+		ObjectInstantiator&lt;TargetService&gt; targetServiceObjectInstantiator = objenesis.getInstantiatorOf(TargetService.class);
+		TargetService targetService1 = targetServiceObjectInstantiator.newInstance();
+		targetService1.say();
+	}
+}
+
+</code></pre>
+<h4 id="再看一下objenesis-enhancer的组合应用">再看一下Objenesis + Enhancer的组合应用：</h4>
+<pre><code class="language-java">public class ObjenesisDemo {
+   public static void main(String[] args) {
+      System.setProperty(DebuggingClassWriter.DEBUG_LOCATION_PROPERTY, &quot;/Users/shiyuesheng/workspace/github/Spring-Framework/spring-shenge-study&quot;);
+      Enhancer enhancer = new Enhancer();
+      enhancer.setSuperclass(com.shenge.luren.jia06.TargetService.class);
+      // 设置回调器类型数组（很重要，使用createClass，必须要设置CallbackType）
+      enhancer.setCallbackType(MethodInterceptor.class);
+      Class clazz = enhancer.createClass();
+
+      // 实例化代理类 此时代理类是没有无参构造器的
+      Objenesis objenesis = new ObjenesisStd();
+      TargetService targetService = (TargetService) objenesis.newInstance(clazz);
+
+      // 设置回调器 （很重要，使用createClass，不能在enhancer中提前设置）
+      Factory factory = (Factory) targetService;
+      factory.setCallbacks(new Callback[]{new MethodInterceptor() {
+         @Override
+         public Object intercept(Object o, Method method, Object[] objects, MethodProxy methodProxy) throws Throwable {
+            System.out.println(&quot;Cglib拦截方法 before：&quot; + method.getName());
+            Object result = methodProxy.invokeSuper(o, objects);
+            System.out.println(&quot;Cglib拦截方法 after：&quot; + method.getName());
+            return result;
+         }
+      }});
+      targetService.say();
+   }
+
+}
+</code></pre>
+<p>这个是模仿的spring cglib代理逻辑。需要特别注意的有两点：</p>
+<ul>
+<li>enhancer.createClass之前必须设置CallbackType，不能设置 Callback实例。</li>
+<li>代理类继承了Factory，代理类实例可以动态的设置 Callback实例、Filter实例。</li>
+</ul>
+]]></content>
+    </entry>
+    <entry>
+        <title type="html"><![CDATA[代理精进系列八：Cglib动态代理原理（一）]]></title>
+        <id>https://shiyuesheng.github.io/post/dai-li-jing-jin-xi-lie-ba-cglib-dong-tai-dai-li-yuan-li-yi/</id>
+        <link href="https://shiyuesheng.github.io/post/dai-li-jing-jin-xi-lie-ba-cglib-dong-tai-dai-li-yuan-li-yi/">
+        </link>
+        <updated>2021-04-25T14:55:57.000Z</updated>
+        <content type="html"><![CDATA[<h1 id="cglib动态代理原理一">Cglib动态代理原理（一）</h1>
+<blockquote>
+<p>通过之前的学习了解到，cglib可以为普通类、接口类创建代理，可以在拦截到的方法上面设置不同的回调，在回调中可以植入增强逻辑，甚至可以修改传入参数，修改返回参数，控制是否继续调用被代理类的真实方法，对被代理类实例进行延迟加载等等。</p>
+<p>这些功能的原理就是通过ASM字节码工具动态的为普通类、接口类生成一个新的代理类，该代理类继承了被代理类，是一个子类；该代理类实现了被代理的方法。</p>
+<p>下面我们从一个简单的场景入手分析下生成的代理类长什么样子，我对这一点非常好奇。</p>
+</blockquote>
+<h3 id="目标类-被代理类">目标类-被代理类</h3>
+<pre><code class="language-java">public class TargetService {
+   public void say() {
+      System.out.println(&quot;目标类 - say&quot;);
+   }
+}
+</code></pre>
+<h3 id="测试代码">测试代码</h3>
+<pre><code class="language-java">public static void main(String[] args) {
+   System.setProperty(DebuggingClassWriter.DEBUG_LOCATION_PROPERTY, &quot;/Users/shiyuesheng/workspace/github/Spring-Framework/spring-shenge-study&quot;);
+   Enhancer enhancer = new Enhancer();
+   enhancer.setSuperclass(TargetService.class);
+   enhancer.setCallbackType(MethodInterceptor.class);
+   enhancer.setCallback(new MethodInterceptor() {
+      @Override
+      public Object intercept(Object o, Method method, Object[] objects, MethodProxy methodProxy) throws Throwable {
+         System.out.println(&quot;Cglib拦截方法 before：&quot; + method.getName());
+         Object result = methodProxy.invokeSuper(o, objects);
+         System.out.println(&quot;Cglib拦截方法 after：&quot; + method.getName());
+         return result;
+      }
+   });
+
+   TargetService targetService = (TargetService) enhancer.create();
+   targetService.say();
+}
+</code></pre>
+<p>运行以上代码会生成三个class文件：</p>
+<ul>
+<li>
+<p><code>TargetService$$EnhancerByCGLIB$$a86bd72a.class</code></p>
+<p>这个是生成的代理类</p>
+</li>
+<li>
+<p><code>TargetService$$EnhancerByCGLIB$$a86bd72a$$FastClassByCGLIB$$c92d2f6e.class</code></p>
+<p>这个是代理类对应的FastClass</p>
+</li>
+<li>
+<p><code>TargetService$$FastClassByCGLIB$$2abc55dd.class</code></p>
+<p>这个是被代理类对应的FastClass</p>
+</li>
+</ul>
+<p>之前已经了解过Cglib的FastClass机制，通过动态字节码技术ASM为目标类构建的方法索引，FastClass通过方法签名可以快速的访问目标类的方法，绕过了JDK的反射机制，这无疑是提升了效率。</p>
+<p>打开代理类class<code>TargetService$$EnhancerByCGLIB$$a86bd72a.class</code></p>
+<pre><code class="language-java">package com.shenge.luren.jia06;
+
+import java.lang.reflect.Method;
+import org.springframework.cglib.core.ReflectUtils;
+import org.springframework.cglib.core.Signature;
+import org.springframework.cglib.proxy.Callback;
+import org.springframework.cglib.proxy.Factory;
+import org.springframework.cglib.proxy.MethodInterceptor;
+import org.springframework.cglib.proxy.MethodProxy;
+
+// 生成的动态代理子类继承了TargetService，并且自动实现了Factory接口，
+// Factory接口提供了修改Callback、快捷创建动态代理子类实例的方法
+public class TargetService$$EnhancerByCGLIB$$a86bd72a extends TargetService implements Factory {
+
+	// 缓存相关的java.lang.reflect实例，以便可以比使用ReflectUtils.newInstance(Class, Class[], Object[])和setThreadCallbacks(Class, Callback[])更快地实例化代理类
+	// 我不是很懂具体代表什么意义，在当前类中没有地方使用它，public static修饰意味着外部使用，猜测是enhancer构造class、实例化过程中用来优化的。
+	public static Object CGLIB$FACTORY_DATA;
+
+	// 静态字段-初始的拦截器数组
+	private static final Callback[] CGLIB$STATIC_CALLBACKS;
+
+	// 静态字段-ThreadLocal 线程隔离，有状态的拦截器数组
+	// 这个地方意味着拦截器进行了线程隔离，不同的线程，拦截器是不同的实例
+	private static final ThreadLocal CGLIB$THREAD_CALLBACKS;
+
+	// 静态字段-拦截器filter
+	private static Object CGLIB$CALLBACK_FILTER;
+
+	// 空的参数数组，有些方法、构造器没有参数，使用这个字段
+	private static final Object[] CGLIB$emptyArgs;
+
+	// Object的equals方法对象、代理方法对象
+	private static final Method CGLIB$equals$1$Method;
+	private static final MethodProxy CGLIB$equals$1$Proxy;
+
+	// Object的toString方法对象、代理方法对象
+	private static final Method CGLIB$toString$2$Method;
+	private static final MethodProxy CGLIB$toString$2$Proxy;
+
+	// Object的hashCode方法对象、代理方法对象
+	private static final Method CGLIB$hashCode$3$Method;
+	private static final MethodProxy CGLIB$hashCode$3$Proxy;
+
+	// Object的clone方法对象、代理方法对象
+	private static final Method CGLIB$clone$4$Method;
+	private static final MethodProxy CGLIB$clone$4$Proxy;
+
+	// 被代理基类TargetService的say方法对象、代理方法对象
+	private static final Method CGLIB$say$0$Method;
+	private static final MethodProxy CGLIB$say$0$Proxy;
+
+	// 实例字段-当前代理类实例是否已经设置好拦截器
+	private boolean CGLIB$BOUND;
+
+	// 实例字段-当前代理类实例设置好的的拦截器
+	private MethodInterceptor CGLIB$CALLBACK_0;
+
+    ...其他设置好的拦截器
+    ...其他设置好的拦截器
+    ...其他设置好的拦截器
+
+	static {
+		// 静态初始化调用
+		CGLIB$STATICHOOK1();
+	}
+
+	// 静态初始化方法，这里就是把上面的静态字段能初始化的都处理了
+	static void CGLIB$STATICHOOK1() {
+		CGLIB$THREAD_CALLBACKS = new ThreadLocal();
+		CGLIB$emptyArgs = new Object[0];
+
+		// 代理类 class
+		Class var0 = Class.forName(&quot;com.shenge.luren.jia06.TargetService$$EnhancerByCGLIB$$a86bd72a&quot;);
+		// Object class
+		Class var1 = Class.forName(&quot;java.lang.Object&quot;);
+
+		// 略过
+		Method[] var10000 = ReflectUtils.findMethods(
+				new String[]{
+						&quot;equals&quot;, &quot;(Ljava/lang/Object;)Z&quot;,
+						&quot;toString&quot;, &quot;()Ljava/lang/String;&quot;,
+						&quot;hashCode&quot;, &quot;()I&quot;,
+						&quot;clone&quot;, &quot;()Ljava/lang/Object;&quot;},
+				var1.getDeclaredMethods());
+
+		// 略过
+		CGLIB$equals$1$Method = var10000[0];
+		CGLIB$equals$1$Proxy = MethodProxy.create(var1, var0, &quot;(Ljava/lang/Object;)Z&quot;, &quot;equals&quot;, &quot;CGLIB$equals$1&quot;);
+
+		// 略过
+		CGLIB$toString$2$Method = var10000[1];
+		CGLIB$toString$2$Proxy = MethodProxy.create(var1, var0, &quot;()Ljava/lang/String;&quot;, &quot;toString&quot;, &quot;CGLIB$toString$2&quot;);
+
+		// 略过
+		CGLIB$hashCode$3$Method = var10000[2];
+		CGLIB$hashCode$3$Proxy = MethodProxy.create(var1, var0, &quot;()I&quot;, &quot;hashCode&quot;, &quot;CGLIB$hashCode$3&quot;);
+
+		// 略过
+		CGLIB$clone$4$Method = var10000[3];
+		CGLIB$clone$4$Proxy = MethodProxy.create(var1, var0, &quot;()Ljava/lang/Object;&quot;, &quot;clone&quot;, &quot;CGLIB$clone$4&quot;);
+
+		// 被代理类 class - TargetService
+		var1 = Class.forName(&quot;com.shenge.luren.jia06.TargetService&quot;);
+
+		// 被代理类TargetService的方法say()对应的Method，传统的反射
+		CGLIB$say$0$Method = ReflectUtils.findMethods(new String[]{&quot;say&quot;, &quot;()V&quot;}, var1.getDeclaredMethods())[0];
+
+		// 方法代理，怎么代理的呢？这里先简单的记住传入的参数
+		// var1 - com.shenge.luren.jia06.TargetService   ----- &quot;say&quot;
+		// var0 - com.shenge.luren.jia06.TargetService$$EnhancerByCGLIB$$a86bd72a   ----- &quot;CGLIB$say$0&quot;
+		CGLIB$say$0$Proxy = MethodProxy.create(var1, var0, &quot;()V&quot;, &quot;say&quot;, &quot;CGLIB$say$0&quot;);
+	}
+
+	// 构造函数，新的代理类实例进行拦截器绑定
+	public TargetService$$EnhancerByCGLIB$$a86bd72a() {
+		CGLIB$BIND_CALLBACKS(this);
+	}
+
+	// 代理类实例绑定拦截器
+	private static final void CGLIB$BIND_CALLBACKS(Object var0) {
+		TargetService$$EnhancerByCGLIB$$a86bd72a var1 = (TargetService$$EnhancerByCGLIB$$a86bd72a)var0;
+		if (!var1.CGLIB$BOUND) {
+			var1.CGLIB$BOUND = true;
+			Object var10000 = CGLIB$THREAD_CALLBACKS.get();
+			if (var10000 == null) {
+				var10000 = CGLIB$STATIC_CALLBACKS;
+				if (var10000 == null) {
+					return;
+				}
+			}
+
+			var1.CGLIB$CALLBACK_0 = (MethodInterceptor)((Callback[])var10000)[0];
+		}
+
+	}
+
+	// 内部调用父类的方法
+	final void CGLIB$say$0() {
+		super.say();
+	}
+
+	// 代理目标类的同名方法
+	public final void say() {
+		// 该方法对应的拦截器
+		MethodInterceptor var10000 = this.CGLIB$CALLBACK_0;
+		if (var10000 == null) {
+			CGLIB$BIND_CALLBACKS(this);
+			var10000 = this.CGLIB$CALLBACK_0;
+		}
+
+		if (var10000 != null) {
+			// 存在拦截器，走拦截
+			var10000.intercept(this, CGLIB$say$0$Method, CGLIB$emptyArgs, CGLIB$say$0$Proxy);
+		} else {
+			// 不存在拦截器，调用父类方法
+			super.say();
+		}
+	}
+
+	// 略过
+	final boolean CGLIB$equals$1(Object var1) {
+		return super.equals(var1);
+	}
+	// 略过
+	public final boolean equals(Object var1) {
+		MethodInterceptor var10000 = this.CGLIB$CALLBACK_0;
+		if (var10000 == null) {
+			CGLIB$BIND_CALLBACKS(this);
+			var10000 = this.CGLIB$CALLBACK_0;
+		}
+
+		if (var10000 != null) {
+			Object var2 = var10000.intercept(this, CGLIB$equals$1$Method, new Object[]{var1}, CGLIB$equals$1$Proxy);
+			return var2 == null ? false : (Boolean)var2;
+		} else {
+			return super.equals(var1);
+		}
+	}
+	// 略过
+	final String CGLIB$toString$2() {
+		return super.toString();
+	}
+	// 略过
+	public final String toString() {
+		MethodInterceptor var10000 = this.CGLIB$CALLBACK_0;
+		if (var10000 == null) {
+			CGLIB$BIND_CALLBACKS(this);
+			var10000 = this.CGLIB$CALLBACK_0;
+		}
+
+		return var10000 != null ? (String)var10000.intercept(this, CGLIB$toString$2$Method, CGLIB$emptyArgs, CGLIB$toString$2$Proxy) : super.toString();
+	}
+	// 略过
+	final int CGLIB$hashCode$3() {
+		return super.hashCode();
+	}
+	// 略过
+	public final int hashCode() {
+		MethodInterceptor var10000 = this.CGLIB$CALLBACK_0;
+		if (var10000 == null) {
+			CGLIB$BIND_CALLBACKS(this);
+			var10000 = this.CGLIB$CALLBACK_0;
+		}
+
+		if (var10000 != null) {
+			Object var1 = var10000.intercept(this, CGLIB$hashCode$3$Method, CGLIB$emptyArgs, CGLIB$hashCode$3$Proxy);
+			return var1 == null ? 0 : ((Number)var1).intValue();
+		} else {
+			return super.hashCode();
+		}
+	}
+	// 略过
+	final Object CGLIB$clone$4() throws CloneNotSupportedException {
+		return super.clone();
+	}
+	// 略过
+	protected final Object clone() throws CloneNotSupportedException {
+		MethodInterceptor var10000 = this.CGLIB$CALLBACK_0;
+		if (var10000 == null) {
+			CGLIB$BIND_CALLBACKS(this);
+			var10000 = this.CGLIB$CALLBACK_0;
+		}
+
+		return var10000 != null ? var10000.intercept(this, CGLIB$clone$4$Method, CGLIB$emptyArgs, CGLIB$clone$4$Proxy) : super.clone();
+	}
+
+	// 通过方法签名查询对应的 MethodProxy
+	public static MethodProxy CGLIB$findMethodProxy(Signature var0) {
+		String var10000 = var0.toString();
+		switch(var10000.hashCode()) {
+			case -909388886:
+				if (var10000.equals(&quot;say()V&quot;)) {
+					return CGLIB$say$0$Proxy;
+				}
+				break;
+			case -508378822:
+				if (var10000.equals(&quot;clone()Ljava/lang/Object;&quot;)) {
+					return CGLIB$clone$4$Proxy;
+				}
+				break;
+			case 1826985398:
+				if (var10000.equals(&quot;equals(Ljava/lang/Object;)Z&quot;)) {
+					return CGLIB$equals$1$Proxy;
+				}
+				break;
+			case 1913648695:
+				if (var10000.equals(&quot;toString()Ljava/lang/String;&quot;)) {
+					return CGLIB$toString$2$Proxy;
+				}
+				break;
+			case 1984935277:
+				if (var10000.equals(&quot;hashCode()I&quot;)) {
+					return CGLIB$hashCode$3$Proxy;
+				}
+		}
+
+		return null;
+	}
+
+	// 设置代理类实例的回调
+	public static void CGLIB$SET_THREAD_CALLBACKS(Callback[] var0) {
+		CGLIB$THREAD_CALLBACKS.set(var0);
+	}
+
+	// 设置代理类的回调
+	public static void CGLIB$SET_STATIC_CALLBACKS(Callback[] var0) {
+		CGLIB$STATIC_CALLBACKS = var0;
+	}
+
+	// 实现的Factory接口 - 快速的创建代理类实例，并设置回调
+	public Object newInstance(Callback[] var1) {
+		CGLIB$SET_THREAD_CALLBACKS(var1);
+		TargetService$$EnhancerByCGLIB$$a86bd72a var10000 = new TargetService$$EnhancerByCGLIB$$a86bd72a();
+		CGLIB$SET_THREAD_CALLBACKS((Callback[])null);
+		return var10000;
+	}
+
+	// 实现的Factory接口 - 快速的创建代理类实例，并设置回调
+	public Object newInstance(Callback var1) {
+		CGLIB$SET_THREAD_CALLBACKS(new Callback[]{var1});
+		TargetService$$EnhancerByCGLIB$$a86bd72a var10000 = new TargetService$$EnhancerByCGLIB$$a86bd72a();
+		CGLIB$SET_THREAD_CALLBACKS((Callback[])null);
+		return var10000;
+	}
+
+	// 实现的Factory接口 - 快速的创建代理类实例，并设置回调
+	public Object newInstance(Class[] var1, Object[] var2, Callback[] var3) {
+		CGLIB$SET_THREAD_CALLBACKS(var3);
+		TargetService$$EnhancerByCGLIB$$a86bd72a var10000 = new TargetService$$EnhancerByCGLIB$$a86bd72a;
+		switch(var1.length) {
+			case 0:
+				var10000.&lt;init&gt;();
+				CGLIB$SET_THREAD_CALLBACKS((Callback[])null);
+				return var10000;
+			default:
+				throw new IllegalArgumentException(&quot;Constructor not found&quot;);
+		}
+	}
+
+	// 实现的Factory接口
+	public Callback getCallback(int var1) {
+		CGLIB$BIND_CALLBACKS(this);
+		MethodInterceptor var10000;
+		switch(var1) {
+			case 0:
+				var10000 = this.CGLIB$CALLBACK_0;
+				break;
+			default:
+				var10000 = null;
+		}
+
+		return var10000;
+	}
+
+	// 实现的Factory接口
+	public void setCallback(int var1, Callback var2) {
+		switch(var1) {
+			case 0:
+				this.CGLIB$CALLBACK_0 = (MethodInterceptor)var2;
+			default:
+		}
+	}
+
+	// 实现的Factory接口
+	public Callback[] getCallbacks() {
+		CGLIB$BIND_CALLBACKS(this);
+		return new Callback[]{this.CGLIB$CALLBACK_0};
+	}
+
+	// 实现的Factory接口
+	public void setCallbacks(Callback[] var1) {
+		this.CGLIB$CALLBACK_0 = (MethodInterceptor)var1[0];
+	}
+
+}
+</code></pre>
+<p>注释的很详细，不做过多描述。我最关心的只有一个，MethodProxy是啥？我把上面相关的注释，以及代码中是如何使用的放在一块方便对比。</p>
+<pre><code class="language-java">// 被代理类TargetService的方法say()对应的Method，传统的反射
+Method CGLIB$say$0$Method = ReflectUtils.findMethods(new String[]{&quot;say&quot;, &quot;()V&quot;}, var1.getDeclaredMethods())[0];
+
+// 方法代理，怎么代理的呢？这里先简单的记住传入的参数
+// var1 - com.shenge.luren.jia06.TargetService   ----- &quot;say&quot;
+// var0 - com.shenge.luren.jia06.TargetService$$EnhancerByCGLIB$$a86bd72a   ----- &quot;CGLIB$say$0&quot;
+MethodProxy	CGLIB$say$0$Proxy = MethodProxy.create(var1, var0, &quot;()V&quot;, &quot;say&quot;, &quot;CGLIB$say$0&quot;);
+
+// 调用拦截器方法
+MethodInterceptor var10000.intercept(this, CGLIB$say$0$Method, CGLIB$emptyArgs, CGLIB$say$0$Proxy);
+
+// 拦截方法内部的使用
+new MethodInterceptor() {
+      @Override
+      public Object intercept(Object o, Method method, Object[] objects, MethodProxy methodProxy) throws Throwable {
+            System.out.println(&quot;Cglib拦截方法 before：&quot; + method.getName());
+            Object result = methodProxy.invokeSuper(o, objects);
+            System.out.println(&quot;Cglib拦截方法 after：&quot; + method.getName());
+            return result;
+      }
+}
+</code></pre>
+<p>根据上面的信息可以做一个简单的推导。</p>
+<p>MethodProxy，见名知义，对应传统的Method，这是一个方法代理，可以通过传入一个实例，去invoke实例对应的方法。那他具体支持哪些实例类型，哪些方法调用呢？</p>
+<p>以上面的 MethodProxy CGLIB$say<span class="katex"><span class="katex-mathml"><math><semantics><mrow><mn>0</mn></mrow><annotation encoding="application/x-tex">0</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.64444em;vertical-align:0em;"></span><span class="mord">0</span></span></span></span>Proxy为例：他应该是支持两种场景</p>
+<ul>
+<li>
+<p>com.shenge.luren.jia06.TargetService  类型的实例，方法名称是 say 的方法调用</p>
+</li>
+<li>
+<p>com.shenge.luren.jia06.TargetService$$EnhancerByCGLIB$$a86bd72a  类型的实例，方法名称是 CGLIB$say<span class="katex"><span class="katex-mathml"><math><semantics><mrow><mn>0</mn><mi mathvariant="normal">的</mi><mi mathvariant="normal">方</mi><mi mathvariant="normal">法</mi><mi mathvariant="normal">调</mi><mi mathvariant="normal">用</mi><mi mathvariant="normal">。</mi><mi mathvariant="normal">这</mi><mi mathvariant="normal">个</mi><mi>C</mi><mi>G</mi><mi>L</mi><mi>I</mi><mi>B</mi></mrow><annotation encoding="application/x-tex">0的方法调用。这个CGLIB</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.68333em;vertical-align:0em;"></span><span class="mord">0</span><span class="mord cjk_fallback">的</span><span class="mord cjk_fallback">方</span><span class="mord cjk_fallback">法</span><span class="mord cjk_fallback">调</span><span class="mord cjk_fallback">用</span><span class="mord cjk_fallback">。</span><span class="mord cjk_fallback">这</span><span class="mord cjk_fallback">个</span><span class="mord mathdefault" style="margin-right:0.07153em;">C</span><span class="mord mathdefault">G</span><span class="mord mathdefault">L</span><span class="mord mathdefault" style="margin-right:0.07847em;">I</span><span class="mord mathdefault" style="margin-right:0.05017em;">B</span></span></span></span>say$0从上面可以知道，就是调用的父类的say方法。注意这里隐含的意思是发起此次调用的是代理子类类型的实例。</p>
+</li>
+</ul>
+<p>这两种场景是孪生子，返回值是相同的。目前知道的这些，就能印证代码中的调用：</p>
+<p>Object result = methodProxy.invokeSuper(o, objects); 这个走的是第二种场景，调用了代理类的父类方法。</p>
+<h2 id="methodproxy源码">MethodProxy源码</h2>
+<p>MethodProxy对下面这两个方法作了代理：</p>
+<ul>
+<li>
+<p>com.shenge.luren.jia06.TargetService --- say()</p>
+</li>
+<li>
+<p>com.shenge.luren.jia06.TargetService$$EnhancerByCGLIB$$a86bd72a --- CGLIB$say$0()</p>
+</li>
+</ul>
+<p>实现原理，通过ASM字节码工具运行时动态的为这两个类生成对应的FastClass，并找出方法在其中的索引。当使用MethodProxy.invoke，或者MethodProxy.invokeSuper时，其实时绕过了反射机制，直接通过硬编码的方式进行方法调用。</p>
+<pre><code class="language-java">package org.springframework.cglib.proxy;
+
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
+
+import org.springframework.cglib.core.AbstractClassGenerator;
+import org.springframework.cglib.core.CodeGenerationException;
+import org.springframework.cglib.core.GeneratorStrategy;
+import org.springframework.cglib.core.NamingPolicy;
+import org.springframework.cglib.core.Signature;
+import org.springframework.cglib.reflect.FastClass;
+
+/**
+ * 当调用拦截的方法时， Enhancer生成的类将此对象传递给已注册的MethodInterceptor对象。
+ * 它可以用于调用原始方法，也可以在相同类型的不同实例上调用相同方法。
+ */
+@SuppressWarnings({&quot;rawtypes&quot;, &quot;unchecked&quot;})
+public class MethodProxy {
+
+   private Signature sig1;
+
+   private Signature sig2;
+
+   private CreateInfo createInfo;
+
+   /**
+    * 创建 MethodProxy
+    * @param c1 被代理的基类class，--- com.shenge.luren.jia06.TargetService
+    * @param c2 代理类class，--- com.shenge.luren.jia06.TargetService$$EnhancerByCGLIB$$a86bd72a
+    * @param desc 方法描述符，包括参数类型、返回类型描述
+    * @param name1 被代理的基类方法，--- say()
+    * @param name2 代理类的方法，--- CGLIB$say$0() 内部直接调用的父类 say()方法
+    * @return
+    */
+   public static MethodProxy create(Class c1, Class c2, String desc, String name1, String name2) {
+      MethodProxy proxy = new MethodProxy();
+      // 方法签名抽象 - say()
+      proxy.sig1 = new Signature(name1, desc);
+      // 方法签名抽象 - CGLIB$say$0()
+      proxy.sig2 = new Signature(name2, desc);
+      // 记录构造信息
+      proxy.createInfo = new CreateInfo(c1, c2);
+      return proxy;
+   }
+
+   // 记录构造信息
+   private static class CreateInfo {
+
+      // 被代理的基类class，--- com.shenge.luren.jia06.TargetService
+      Class c1;
+
+      // 代理类class，--- com.shenge.luren.jia06.TargetService$$EnhancerByCGLIB$$a86bd72a
+      Class c2;
+
+      NamingPolicy namingPolicy;
+
+      GeneratorStrategy strategy;
+
+      boolean attemptLoad;
+
+      public CreateInfo(Class c1, Class c2) {
+         this.c1 = c1;
+         this.c2 = c2;
+         AbstractClassGenerator fromEnhancer = AbstractClassGenerator.getCurrent();
+         if (fromEnhancer != null) {
+            namingPolicy = fromEnhancer.getNamingPolicy();
+            strategy = fromEnhancer.getStrategy();
+            attemptLoad = fromEnhancer.getAttemptLoad();
+         }
+      }
+   }
+
+
+   // 初始化过程用到的锁对象
+   private final Object initLock = new Object();
+
+   // FastClass相关信息
+   private volatile FastClassInfo fastClassInfo;
+
+   private static class FastClassInfo {
+      // 被代理的基类class 对应的 FastClass  --- com.shenge.luren.jia06.TargetService$$FastClassByCGLIB$$2abc55dd
+      FastClass f1;
+      // say()在f1中的索引
+      int i1;
+
+      // 代理类class 对应的 FastClass  ---  com.shenge.luren.jia06.TargetService$$EnhancerByCGLIB$$a87e4a3d$$FastClassByCGLIB$$caf71a8c
+      FastClass f2;
+      // CGLIB$say$0()在f2中的索引
+      int i2;
+   }
+
+   // 根据构造信息初始化
+   // 生成被代理基类、代理类所对应的FastClass，
+   // 记录方法say()、CGLIB$say$0()在各自FastClass中的索引
+   private void init() {
+      //double check
+      if (fastClassInfo == null) {
+         synchronized (initLock) {
+            if (fastClassInfo == null) {
+               CreateInfo ci = createInfo;
+
+               FastClassInfo fci = new FastClassInfo();
+               // 获取FastClass
+               fci.f1 = helper(ci, ci.c1);
+               fci.f2 = helper(ci, ci.c2);
+               // 获取方法索引
+               fci.i1 = fci.f1.getIndex(sig1);
+               fci.i2 = fci.f2.getIndex(sig2);
+               fastClassInfo = fci;
+               createInfo = null;
+            }
+         }
+      }
+   }
+
+   // 这个过程熟悉吧，就是之前已经分析过的FastClass生成逻辑
+   private static FastClass helper(CreateInfo ci, Class type) {
+      FastClass.Generator g = new FastClass.Generator();
+      g.setType(type);
+      // SPRING PATCH BEGIN
+      g.setContextClass(type);
+      // SPRING PATCH END
+      g.setClassLoader(ci.c2.getClassLoader());
+      g.setNamingPolicy(ci.namingPolicy);
+      g.setStrategy(ci.strategy);
+      g.setAttemptLoad(ci.attemptLoad);
+      return g.create();
+   }
+
+   /**
+    * 返回代理类中与给定签名匹配的MethodProxy。
+    *
+    * 参数：
+    * type–由Enhancer生成的代理子类
+    * sig –方法的签名
+    */
+   public static MethodProxy find(Class type, Signature sig) {
+      try {
+         Method m = type.getDeclaredMethod(MethodInterceptorGenerator.FIND_PROXY_NAME,
+               MethodInterceptorGenerator.FIND_PROXY_TYPES);
+         return (MethodProxy) m.invoke(null, new Object[]{sig});
+      }
+      catch (NoSuchMethodException ex) {
+         throw new IllegalArgumentException(&quot;Class &quot; + type + &quot; does not use a MethodInterceptor&quot;);
+      }
+      catch (IllegalAccessException | InvocationTargetException ex) {
+         throw new CodeGenerationException(ex);
+      }
+   }
+
+   /**
+    * 在相同类型的不同实例上调用被代理基类的原始方法。
+    *
+    * 参数：
+    * obj –兼容被代理基类对象（注意：如果您使用传递给MethodInterceptor的第一个参数的对象，则将导致递归）
+    * args –传递给拦截方法的参数； 可以替换其他参数数组，只要类型兼容
+    */
+   public Object invoke(Object obj, Object[] args) throws Throwable {
+      try {
+         // 初始化FastClass信息
+         init();
+         FastClassInfo fci = fastClassInfo;
+         // fci.f1 --- com.shenge.luren.jia06.TargetService$$FastClassByCGLIB$$2abc55dd
+         // fci.i1 --- say()
+         return fci.f1.invoke(fci.i1, obj, args);
+      }
+      catch (InvocationTargetException ex) {
+         throw ex.getTargetException();
+      }
+      catch (IllegalArgumentException ex) {
+         if (fastClassInfo.i1 &lt; 0)
+            throw new IllegalArgumentException(&quot;Protected method: &quot; + sig1);
+         throw ex;
+      }
+   }
+
+   /**
+    * 在指定实例上调用原始父类（超级）方法。
+    *
+    * 参数：
+    * obj –代理类实例，必须是作为第一个参数传递给MethodInterceptor的对象
+    * args –传递给拦截方法的参数； 可以替换其他参数数组，只要类型兼容
+    */
+   public Object invokeSuper(Object obj, Object[] args) throws Throwable {
+      try {
+         // 初始化FastClass信息
+         init();
+         FastClassInfo fci = fastClassInfo;
+         // fci.f2 --- com.shenge.luren.jia06.TargetService$$EnhancerByCGLIB$$a87e4a3d$$FastClassByCGLIB$$caf71a8c
+         // fci.i2 --- CGLIB$say$0()
+         return fci.f2.invoke(fci.i2, obj, args);
+      }
+      catch (InvocationTargetException e) {
+         throw e.getTargetException();
+      }
+   }
 
 }
 </code></pre>
 <h2 id="总结">总结</h2>
-<p>不管使用反序列化窃取的方式，还是反射的方式，总算拿到了SerializedLambda信息，后续就是实战了。</p>
-<p>我会在redis-hash-mapping项目中进行实战，并做进一步的性能优化、结构优化。</p>
+<p>这次通过最通用的MethodInterceptor为引，对Enhancer增强的代理类的运作原理进行了简单的分析。向之前提到的一些特殊的CallBack，殊途同归，就不把分析过程贴上来了，感兴趣的同学可以按照上面的模板进行调试，要比这个MethodInterceptor情况更加简单，引文很多类型的CallBack根本不需要MethodProxy。</p>
 ]]></content>
     </entry>
     <entry>
-        <title type="html"><![CDATA[Lambda系列四：方法引用序列化]]></title>
-        <id>https://shiyuesheng.github.io/post/fang-fa-yin-yong-xu-lie-hua/</id>
-        <link href="https://shiyuesheng.github.io/post/fang-fa-yin-yong-xu-lie-hua/">
+        <title type="html"><![CDATA[代理精进系列七：Cglib FastClass机制]]></title>
+        <id>https://shiyuesheng.github.io/post/dai-li-jing-jin-xi-lie-qi-cglib-fastclass-ji-zhi/</id>
+        <link href="https://shiyuesheng.github.io/post/dai-li-jing-jin-xi-lie-qi-cglib-fastclass-ji-zhi/">
         </link>
-        <updated>2021-04-02T06:31:10.000Z</updated>
-        <content type="html"><![CDATA[<blockquote>
-<p>先进行总结，方便回顾：</p>
-<p>LambdaSerializeTest::toLong 方法引用抽象成的Function，在下游逻辑中能够完全解析出对应的Class、Method、Field，核心就在SerializedLambda对象中。</p>
+        <updated>2021-04-25T14:55:10.000Z</updated>
+        <content type="html"><![CDATA[<h1 id="cglib-fastclass机制">Cglib FastClass机制</h1>
+<blockquote>
+<p>在深入了解Cglib低层原理之前，需要先一步理解Cglib FastClass机制的运作原理，不然看Cglib的源码会有点云里雾里。磨刀不误砍柴工，我们开始吧。</p>
+<p>笼统的说FastClass就是方法的快速索引。</p>
+<p>FastClass不使用传统的反射类（Constructor或Method）来调用委托类方法，而是为目标类动态生成一个新的类（继承FastClass），我后面用<strong>FastClass动态子类</strong>来称呼这个动态生成的类。FastClass动态子类内部维护了目标类所有方法的索引，外部进行调用时，通过方法签名或者方法名称+参数类型查找（lookup）对应的方法索引，然后进行显式的调用。</p>
+<p>这个FastClass动态子类跟目标类就像是孪生的关系，目标类干活，FastClass动态子类在目标类基础上构建索引，为目标类提供更加高效的方法访问、调用。</p>
+<p>有的必有失，高性能的访问是有代价的，就是fastclass是动态生成的，构建过程会有一定的性能开销，会占用JVM内存中的方法区资源。当然Cglib内部作了极致的优化，缓存绑定的fastclass信息，weak技术及时的卸载。</p>
+<p>当然目标类是感知不到这个FastClass动态子类，Cglib内部缓存优化维护了他们之间的映射关系。</p>
+<p>例如：TargetService -&gt; TargetService$$FastClassByCGLIB$$7705815b extends FastClass</p>
 </blockquote>
-<h2 id="方法引用序列化例子">方法引用序列化例子</h2>
-<pre><code class="language-java">public class LambdaSerializeTest implements Serializable {
+<h2 id="测试用例">测试用例</h2>
+<pre><code class="language-java">// 目标类
+public class TargetService {
+   public void say() {
+      System.out.println(&quot;say&quot;);
+   }
+}
 
-    public Long toLong() {
-        return 9527L;
-    }
+// 测试方法
+public class CglibFastDemo {
+	public static void main(String[] args) throws NoSuchMethodException, IllegalAccessException, InvocationTargetException, InstantiationException {
+		System.setProperty(DebuggingClassWriter.DEBUG_LOCATION_PROPERTY, &quot;/Users/shiyuesheng/workspace/github/Spring-Framework/spring-shenge-study&quot;);
+//		reflection();
+		cglibFastClass();
+	}
 
-    public static void main(String[] args) throws IOException, ClassNotFoundException {
-        FunctionSerializable&lt;LambdaSerializeTest, Long&gt; functionSerializableDemo = LambdaSerializeTest::toLong;
+	private static void reflection() throws NoSuchMethodException, IllegalAccessException, InvocationTargetException, InstantiationException {
+		// 传统的Java 反射
+		Class&lt;TargetService&gt; clazz = TargetService.class;
+		// 获取构造器
+		Constructor&lt;TargetService&gt; constructor = clazz.getDeclaredConstructor(null);
+		TargetService targetService = constructor.newInstance(null);
+		// 获取方法
+		Method method = clazz.getDeclaredMethod(&quot;say&quot;, null);
+		method.invoke(targetService, null);
+	}
 
-        //序列化到文件
-        serialize(functionSerializableDemo, new FileOutputStream(&quot;functionSerializableDemo&quot;));
-
-        //反序列化
-        FunctionSerializable&lt;LambdaSerializeTest, Long&gt; functionDeserializableDemo = (FunctionSerializable&lt;LambdaSerializeTest, Long&gt;)
-                deserialize(new FileInputStream(&quot;functionSerializableDemo&quot;));
-        Long result = functionDeserializableDemo.apply(new LambdaSerializeTest());
-        System.out.println(result);
-    }
-
-    public static void serialize(Object obj, OutputStream out) throws IOException {
-        ObjectOutputStream objOut = new ObjectOutputStream(out);
-        objOut.writeObject(obj);
-        out.flush();
-        out.close();
-    }
-
-    public static Object deserialize(InputStream in) throws IOException, ClassNotFoundException {
-        ObjectInputStream objIn = new ObjectInputStream(in);
-        Object result = objIn.readObject();
-        objIn.close();
-        return result;
-    }
+	private static void cglibFastClass() throws InvocationTargetException {
+		// Cglib FastClass
+		Class&lt;TargetService&gt; clazz = TargetService.class;
+		// 动态生成FastClass子类
+		FastClass fastClass = FastClass.create(clazz);
+		// 创建实例
+		TargetService targetService = (TargetService) fastClass.newInstance();
+		// 调用方法  第二个参数 Class[] parameterTypes不能 为null
+		fastClass.invoke(&quot;say&quot;, new Class[0], targetService, null);
+	}
 }
 </code></pre>
-<p>轻车熟路，不做过多的描述，排除干扰因素，直接看最终生成内部类有何不同</p>
-<pre><code class="language-java">final class LambdaSerializeTest$$Lambda$1 implements FunctionSerializable {
-    private LambdaSerializeTest$$Lambda$1() {
-    }
-
-    @Hidden
-    public Object apply(Object var1) {
-        return ((LambdaSerializeTest)var1).toLong();
-    }
-
-    private final Object writeReplace() {
-        return new SerializedLambda(
-          LambdaSerializeTest.class, 
-          &quot;suishen/redis/hash/mapping/test/FunctionSerializable&quot;, 
-          &quot;apply&quot;, 
-          &quot;(Ljava/lang/Object;)Ljava/lang/Object;&quot;, 
-          5, 
-          &quot;suishen/redis/hash/mapping/test/LambdaSerializeTest&quot;, 
-          &quot;toLong&quot;, 
-          &quot;()Ljava/lang/Long;&quot;, 
-          &quot;(Lsuishen/redis/hash/mapping/test/LambdaSerializeTest;)Ljava/lang/Long;&quot;, 
-          new Object[0]);
-    }
-}
-</code></pre>
-<p>SerializedLambda 中的 implMethodName 参数（lambda表达式真正实现方法名称），是 <strong>toLong</strong>。</p>
-<p>也就是例子中 <strong>LambdaSerializeTest::toLong</strong>  的方法。</p>
-<p><strong>implClass</strong> ：suishen/redis/hash/mapping/test/LambdaSerializeTest<br>
-<strong>implMethodName</strong> ：toLong</p>
-<p>这两个信息在手，就可以搞事情了，通过反射，我们就能在下游逻辑中，拿着FunctionSerializable的实例解析出对应的Class、Method，更进一步，如果是个POJO的get、set方法，根据规范还能解析出对应的Field，感受到ORM框架的气息了吗？Mybatis-plus 框架中就是这么干的。</p>
-<p>后面就开始实战。</p>
-]]></content>
-    </entry>
-    <entry>
-        <title type="html"><![CDATA[Lambda系列三：Lambda表达式序列化]]></title>
-        <id>https://shiyuesheng.github.io/post/lambda-biao-da-shi-xu-lie-hua/</id>
-        <link href="https://shiyuesheng.github.io/post/lambda-biao-da-shi-xu-lie-hua/">
-        </link>
-        <updated>2021-04-02T06:30:22.000Z</updated>
-        <content type="html"><![CDATA[<blockquote>
-<p>序列化是将对象的状态写入字节流的过程，以便我们可以通过网络传输它。**如果lambda表达式的目标类型和捕获的参数已序列化，则可以序列化该表达式。**但是，与内部类一样，强烈不建议对lambda表达式进行序列化。</p>
-<p>先进行总结，方便回顾，下面描述的前提是支持序列化的lambda表达式。</p>
-<p>1、编译时，lambda表达式所在声明类生成一个隐藏的私有静态方法 <code>$deserializeLambda$</code>，用以反序列化。</p>
-<p>2、运行时，lambda表达式动态生成内部类class，内部类中多出 <code>readResolve()</code>方法，用以序列化。</p>
-<p>3、序列化时，lambda表达式实例调用<code>readResolve()</code>方法，返回 <strong>SerializedLambda</strong>对象。</p>
-<p>4、序列化 <strong>SerializedLambda</strong>对象 ------&gt; 反序列化 <strong>SerializedLambda</strong>对象。</p>
-<p>5、反序列化时，<strong>SerializedLambda</strong>对象调用<code>readResolve()</code>方法。</p>
-<p>6、<code>readResolve()</code>方法内部调用lambda表达式所造声明类的<code>$deserializeLambda$</code>。</p>
-<p>7、<code>$deserializeLambda$</code>内部根据<strong>SerializedLambda</strong>对象信息生成新的内部类class，实例化lambda表达式对象。</p>
+<p>测试用例中对传统Java反射、FastClass进行了比对，整体上FastClass的操作流程抽象的跟传统Java反射差不太多，很难看出区别，下面我们逐字逐句的看下 FastClass.create(clazz)、fastClass.invoke() 内部是如何实现的。</p>
+<h2 id="fastclass源码解析">FastClass源码解析</h2>
+<blockquote>
+<p>FastClass.Generator 内部通过ASM字节码框架对目标类定制化的的生成FastClass类型结构的动态子类。内部进行了缓存优化。我们研究下生成的<strong>FastClass动态子类</strong>长什么样子就可以了，至于怎么生成的，那是Cglib跟ASM操作字节码的内部过程，细节太过低层，不做深究。</p>
+<p>FastClass内部定义了很多模板方法，需要<strong>FastClass动态子类</strong>去实现，同时还对这些模板方法进行了组合，方便外部调用。</p>
+<p>注释比较详细，不做进一步的说明。</p>
 </blockquote>
-<h2 id="序列化-反序列化例子">序列化、反序列化例子</h2>
-<p>自定义一个支持序列化的函数式接口（lambda表达式支持序列化，目标接口支持序列化并不是必须的，只要最终传递的内部类对象支持序列化就可以，文章后面我们再分析）</p>
-<pre><code class="language-java">@FunctionalInterface
-public interface FunctionSerializable&lt;T, R&gt; extends Serializable {
-    R apply(T t);
+<pre><code class="language-java">// FastClass abstract修饰，隐含的说明这是个功能抽象的模板类
+public abstract class FastClass {
+
+    // 目标类Class
+    private Class type;
+
+    protected FastClass() {
+        throw new Error(&quot;Using the FastClass empty constructor--please report to the cglib-devel mailing list&quot;);
+    }
+
+    // 构造器，protected修饰，一般是子类调用
+    protected FastClass(Class type) {
+        this.type = type;
+    }
+
+    // FastClass子类的构建方法，核心入口，参数是目标类Class
+    public static FastClass create(Class type) {
+        return create(type.getClassLoader(), type);
+    }
+
+    // FastClass子类的构建方法，核心入口，参数是目标类Class、指定的类加载器
+    public static FastClass create(ClassLoader loader, Class type) {
+        // FastClass子类动态生成器，内部实现太过低层，跳过
+        FastClass.Generator gen = new FastClass.Generator();
+        gen.setType(type);
+        gen.setClassLoader(loader);
+        return gen.create();
+    }
+
+    // 方法调用 - 通过方法名称，参数类型，参数内容，对象实例（这个对象实例必须是FastClass.type-目标类类型）
+    public Object invoke(String name, Class[] parameterTypes, Object obj, Object[] args) throws InvocationTargetException {
+        // this.getIndex 由子类实现，通过方法名称、参数类型，获取方法索引
+        // this.invoke 由子类实现，通过方法索引、对象实例、参数内容 进行方法调用，值得注意的是内部会先对obj进行强制类型转换，转换成FastClass.type类型
+        return this.invoke(this.getIndex(name, parameterTypes), obj, args);
+    }
+
+    // 无参构造器调用
+    public Object newInstance() throws InvocationTargetException {
+        // this.getIndex 由子类实现，通过空的参数类型列表，获取构造器索引
+        // this.newInstance 由子类实现，通过无参构造器索引，空的参数内容调用
+        return this.newInstance(this.getIndex(Constants.EMPTY_CLASS_ARRAY), (Object[])null);
+    }
+
+    // 有参数构造器调用，类比以上，不做赘述
+    public Object newInstance(Class[] parameterTypes, Object[] args) throws InvocationTargetException {
+        return this.newInstance(this.getIndex(parameterTypes), args);
+    }
+
+    // 对传入的Method进行解析，包装，找到对应的方法索引，FastMethod.invoke内部就是通过解析到的方法索引进行快速调用的
+    public FastMethod getMethod(Method method) {
+        return new FastMethod(this, method);
+    }
+
+    // 类比FastMethod.getMethod，不做赘述
+    public FastConstructor getConstructor(Constructor constructor) {
+        return new FastConstructor(this, constructor);
+    }
+
+    // 类比FastMethod.getMethod，不做赘述(内部先是通过Java源生API获取Method，然后走上面的FastMethod.getMethod)
+    public FastMethod getMethod(String name, Class[] parameterTypes) {
+        try {
+            return this.getMethod(this.type.getMethod(name, parameterTypes));
+        } catch (NoSuchMethodException var4) {
+            throw new NoSuchMethodError(var4.getMessage());
+        }
+    }
+
+    // 类比FastMethod.getMethod，不做赘述
+    public FastConstructor getConstructor(Class[] parameterTypes) {
+        try {
+            return this.getConstructor(this.type.getConstructor(parameterTypes));
+        } catch (NoSuchMethodException var3) {
+            throw new NoSuchMethodError(var3.getMessage());
+        }
+    }
+
+    public String getName() {
+        return this.type.getName();
+    }
+
+    public Class getJavaClass() {
+        return this.type;
+    }
+
+    public String toString() {
+        return this.type.toString();
+    }
+
+    public int hashCode() {
+        return this.type.hashCode();
+    }
+
+    public boolean equals(Object o) {
+        return o != null &amp;&amp; o instanceof FastClass ? this.type.equals(((FastClass)o).type) : false;
+    }
+
+    // 子类实现 获取方法索引
+    public abstract int getIndex(String var1, Class[] var2);
+
+    // 子类实现 获取构造器索引
+    public abstract int getIndex(Class[] var1);
+
+    // 子类实现 调用方法
+    public abstract Object invoke(int var1, Object var2, Object[] var3) throws InvocationTargetException;
+
+    // 子类实现 调用构造器
+    public abstract Object newInstance(int var1, Object[] var2) throws InvocationTargetException;
+
+    // 子类实现 获取方法索引，通过方法签名
+    public abstract int getIndex(Signature var1);
+
+    // 子类实现 最大索引值？
+    public abstract int getMaxIndex();
+
+    protected static String getSignatureWithoutReturnType(String name, Class[] parameterTypes) {
+        StringBuffer sb = new StringBuffer();
+        sb.append(name);
+        sb.append('(');
+
+        for(int i = 0; i &lt; parameterTypes.length; ++i) {
+            sb.append(Type.getDescriptor(parameterTypes[i]));
+        }
+
+        sb.append(')');
+        return sb.toString();
+    }
+
+    // FastClass子类动态生成器
+    // 内部通过ASM字节码工具动态的生成字节码，并进行加载、实例化。
+    // 同时内部作了内存缓存优化，
+    public static class Generator extends AbstractClassGenerator {
+        private static final Source SOURCE = new Source(FastClass.class.getName());
+        private Class type;
+
+        public Generator() {
+            super(SOURCE);
+        }
+
+        public void setType(Class type) {
+            this.type = type;
+        }
+
+        // 生成FastClass子类实例的核心入口
+        public FastClass create() {
+            this.setNamePrefix(this.type.getName());
+            return (FastClass)super.create(this.type.getName());
+        }
+
+        protected ClassLoader getDefaultClassLoader() {
+            return this.type.getClassLoader();
+        }
+
+        protected ProtectionDomain getProtectionDomain() {
+            return ReflectUtils.getProtectionDomain(this.type);
+        }
+
+        // 构建FastClass子类字节码的核心入口
+        public void generateClass(ClassVisitor v) throws Exception {
+            new FastClassEmitter(v, this.getClassName(), this.type);
+        }
+
+        // 实例化动态生成的 FastClass子类
+        protected Object firstInstance(Class type) {
+            return ReflectUtils.newInstance(type, new Class[]{Class.class}, new Object[]{this.type});
+        }
+
+        // 实例化动态生成的 FastClass子类
+        protected Object nextInstance(Object instance) {
+            return instance;
+        }
+    }
+
 }
 </code></pre>
-<pre><code class="language-java">public class LambdaSerializeTest implements Serializable {
+<h2 id="fastmethod源码解析">FastMethod源码解析</h2>
+<blockquote>
+<p>上面FastClass源码中出现了一个FastMethod。Class -&gt; FastClass,   Method -&gt; FastMethod</p>
+<p>FastMethod对应的就是传统的Method，内部持有<strong>FastClass动态子类</strong>实例、传统的Method，对传统的Method进行了包装、解析。FastMethod.invoke调用时，内部就已经是方法索引快速访问机制了。</p>
+</blockquote>
+<pre><code class="language-java">// 将传统的Method包装，解析，转换成FastClass体系的Method
+public class FastMethod extends FastMember {
 
-    public Long toLong(String name) {
-        return 9527L;
+    //fc - FastClass 动态子类实例
+    //method - 传统的Java Method
+    FastMethod(FastClass fc, Method method) {
+        super(fc, method, helper(fc, method));
     }
 
-    public static void main(String[] args) throws IOException, ClassNotFoundException {
-        LambdaSerializeTest lambdaTest = new LambdaSerializeTest();
-        FunctionSerializable&lt;String, Long&gt; functionSerializableDemo = s -&gt; lambdaTest.toLong(s);
+    // 获取传统的Method在FastClass动态子类中对应的方法索引，里面使用到了方法签名
+    // 方法签名类toString 类似于长这样 :
+    // equals(Ljava/lang/Object;)Z
+    // toString()Ljava/lang/String;
+    // hashCode()I
+    // say()V
+    private static int helper(FastClass fc, Method method) {
+        int index = fc.getIndex(new Signature(method.getName(), Type.getMethodDescriptor(method)));
+        if (index &gt;= 0) {
+            return index;
+        } else {
+            Class[] types = method.getParameterTypes();
+            System.err.println(&quot;hash=&quot; + method.getName().hashCode() + &quot; size=&quot; + types.length);
 
-        //序列化到文件
-        serialize(functionSerializableDemo, new FileOutputStream(&quot;functionSerializableDemo&quot;));
-
-        //反序列化
-        FunctionSerializable&lt;String, Long&gt; functionDeserializableDemo = (FunctionSerializable&lt;String, Long&gt;)
-                deserialize(new FileInputStream(&quot;functionSerializableDemo&quot;));
-        Long result = functionDeserializableDemo.apply(&quot;shiyuesheng&quot;);
-        System.out.println(result);
-    }
-
-    public static void serialize(Object obj, OutputStream out) throws IOException {
-        ObjectOutputStream objOut = new ObjectOutputStream(out);
-        objOut.writeObject(obj);
-        out.flush();
-        out.close();
-    }
-
-    public static Object deserialize(InputStream in) throws IOException, ClassNotFoundException {
-        ObjectInputStream objIn = new ObjectInputStream(in);
-        Object result = objIn.readObject();
-        objIn.close();
-        return result;
-    }
-}
-</code></pre>
-<p>一个简单的对象序列化测试用例，最终的结果是9527，说明lambda表达式正确的执行了序列化、反序列化。</p>
-<p>java对象序列化，一般都是将对象的类信息和成员变量的值记录下来，然后反序列化时，程序创建该类的一个新对象，然后将记录下来的成员变量的值赋值给这个新创建的对象。但是lambda对象的类是没有固定class文件，内部类都是动态生成的，而且每个都不一样，那么lambda对象是怎么序列化的呢？</p>
-<h3 id="在开始分析之前先提一下这两个对象序列化方法writereplace-readresolve">在开始分析之前先提一下这两个对象序列化方法：writeReplace() &amp; readResolve()</h3>
-<ul>
-<li>**序列化：<strong>如果准备序列化的类中存在</strong>writeReplace()<strong>方法，类实例并不会直接进行序列化，而是先调用</strong>writeReplace()**方法，然后序列化该方法返回的Object</li>
-<li>**反序列化：<strong>反序列化生成的Object中，如果存在</strong>readResolve()**方法，就会调用此方法，最终的序列化结果是该方法返回的Object</li>
-</ul>
-<h2 id="编译案例">编译案例</h2>
-<p>使用命令编译 javac -g LambdaSerializeTest.java</p>
-<p>使用命令查看字节码 javap -v -p LambdaSerializeTest.class</p>
-<p>这里就不贴字节码了，太长了，直接说我分析的结果：</p>
-<p>相比之前不支持序列化的lambda表达式编译结果，这次在声明类中还多了个私有静态方法<code>$deserializeLambda$</code></p>
-<p>见文知意，<code>$deserializeLambda$</code>这个肯定是用来进行lambda反序列化的，里面的逻辑很复杂，不做深究。</p>
-<h2 id="运行案例">运行案例</h2>
-<p>执行命令 java -Djdk.internal.lambda.dumpProxyClasses LambdaSerializeTest</p>
-<p>生成了两个内部类class文件 LambdaSerializeTest$$Lambda<span class="katex"><span class="katex-mathml"><math><semantics><mrow><mn>1</mn><mi mathvariant="normal">、</mi><mi>L</mi><mi>a</mi><mi>m</mi><mi>b</mi><mi>d</mi><mi>a</mi><mi>S</mi><mi>e</mi><mi>r</mi><mi>i</mi><mi>a</mi><mi>l</mi><mi>i</mi><mi>z</mi><mi>e</mi><mi>T</mi><mi>e</mi><mi>s</mi><mi>t</mi></mrow><annotation encoding="application/x-tex">1、LambdaSerializeTest</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.69444em;vertical-align:0em;"></span><span class="mord">1</span><span class="mord cjk_fallback">、</span><span class="mord mathdefault">L</span><span class="mord mathdefault">a</span><span class="mord mathdefault">m</span><span class="mord mathdefault">b</span><span class="mord mathdefault">d</span><span class="mord mathdefault">a</span><span class="mord mathdefault" style="margin-right:0.05764em;">S</span><span class="mord mathdefault">e</span><span class="mord mathdefault" style="margin-right:0.02778em;">r</span><span class="mord mathdefault">i</span><span class="mord mathdefault">a</span><span class="mord mathdefault" style="margin-right:0.01968em;">l</span><span class="mord mathdefault">i</span><span class="mord mathdefault" style="margin-right:0.04398em;">z</span><span class="mord mathdefault">e</span><span class="mord mathdefault" style="margin-right:0.13889em;">T</span><span class="mord mathdefault">e</span><span class="mord mathdefault">s</span><span class="mord mathdefault">t</span></span></span></span>$Lambda$4，而且这两个文件一模一样，第一个肯定是lambda运行时动态生成的，第二个推断是反序列化生成的，而且是一模一样，这是如何做到的呢？</p>
-<p>贴出其中一个的代码：</p>
-<pre><code class="language-java">final class LambdaSerializeTest$$Lambda$1 implements FunctionSerializable {
-    private final LambdaSerializeTest arg$1;
-
-    private LambdaSerializeTest$$Lambda$1(LambdaSerializeTest var1) {
-        this.arg$1 = var1;
-    }
-
-    private static FunctionSerializable get$Lambda(LambdaSerializeTest var0) {
-        return new LambdaSerializeTest$$Lambda$1(var0);
-    }
-
-    @Hidden
-    public Object apply(Object var1) {
-        return LambdaSerializeTest.lambda$main$f56b7046$1(this.arg$1, (String)var1);
-    }
-
-    private final Object writeReplace() {
-        return new SerializedLambda(
-        	LambdaSerializeTest.class, 
-        	&quot;suishen/redis/hash/mapping/test/FunctionSerializable&quot;, 
-        	&quot;apply&quot;, 
-        	&quot;(Ljava/lang/Object;)Ljava/lang/Object;&quot;, 
-        	6, 
-        	&quot;suishen/redis/hash/mapping/test/LambdaSerializeTest&quot;, 
-        	&quot;lambda$main$f56b7046$1&quot;, 
-        	&quot;(Lsuishen/redis/hash/mapping/test/LambdaSerializeTest;Ljava/lang/String;)Ljava/lang/Long;&quot;, 
-        	&quot;(Ljava/lang/String;)Ljava/lang/Long;&quot;, 
-        	new Object[]{this.arg$1});
-    }
-}
-</code></pre>
-<p>相比之前不支持序列化的lambda表达式运行结果，这次内部类中多了个方法<strong>writeReplace()</strong>，上面提到过，最终lambda表达式进行序列化的时候，处理的是**writeReplace()**返回的  <strong>SerializedLambda</strong> 对象。</p>
-<p>该SerializedLambda对象记录如下信息，大部分都是些符号信息，需要特别说明的是，如果存在捕获变量，也包含在<strong>SerializedLambda</strong>对象中，捕获变量也要支持序列化才能序列化成功。</p>
-<table>
-<thead>
-<tr>
-<th>参数名称</th>
-<th>参数说明</th>
-<th style="text-align:left">参数举例</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>captureClass</td>
-<td>lambda表达式所在的声明类</td>
-<td style="text-align:left">LambdaSerializeTest.class</td>
-</tr>
-<tr>
-<td>functionalInterfaceClass</td>
-<td>lambda表达式实现的函数式接口的全限定类名，斜杠分割</td>
-<td style="text-align:left">suishen/redis/hash/mapping/test/FunctionSerializable</td>
-</tr>
-<tr>
-<td>functionalInterfaceMethodName</td>
-<td>lambda表达式实现的函数式接口的方法名</td>
-<td style="text-align:left">apply</td>
-</tr>
-<tr>
-<td>functionalInterfaceMethodSignature</td>
-<td>lambda表达式实现的函数式接口的方法签名</td>
-<td style="text-align:left">(Ljava/lang/Object;)Ljava/lang/Object;</td>
-</tr>
-<tr>
-<td>implMethodKind</td>
-<td>实现方法的方法句柄种类</td>
-<td style="text-align:left">6</td>
-</tr>
-<tr>
-<td>implClass</td>
-<td>lambda表达式真正实现方法所在的类，全限定类名，斜杠分割</td>
-<td style="text-align:left">suishen/redis/hash/mapping/test/LambdaSerializeTest</td>
-</tr>
-<tr>
-<td>implMethodName</td>
-<td>lambda表达式真正实现方法名称</td>
-<td style="text-align:left">lambda<span class="katex"><span class="katex-mathml"><math><semantics><mrow><mi>m</mi><mi>a</mi><mi>i</mi><mi>n</mi></mrow><annotation encoding="application/x-tex">main</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.65952em;vertical-align:0em;"></span><span class="mord mathdefault">m</span><span class="mord mathdefault">a</span><span class="mord mathdefault">i</span><span class="mord mathdefault">n</span></span></span></span>f56b7046$1</td>
-</tr>
-<tr>
-<td>implMethodSignature</td>
-<td>lambda表达式真正实现方法签名</td>
-<td style="text-align:left">(Lsuishen/redis/hash/mapping/test/LambdaSerializeTest;Ljava/lang/String;)Ljava/lang/Long;</td>
-</tr>
-<tr>
-<td>InstantiatedMethodType</td>
-<td>范型变量替换为从捕获点实例化后的函数式接口方法的签名，例：FunctionSerializable&lt;String, Long&gt;</td>
-<td style="text-align:left">(Ljava/lang/String;)Ljava/lang/Long;</td>
-</tr>
-<tr>
-<td>captureArgs</td>
-<td>lambda捕获的变量，这里的变量得支持序列化</td>
-<td style="text-align:left">new Object[]{this.arg$1})</td>
-</tr>
-</tbody>
-</table>
-<h2 id="serializedlambda">SerializedLambda</h2>
-<p>java.lang.invoke.SerializedLambda，这个类并不复杂，除了构造器，其余的就是对各种属性的获取、转换。</p>
-<p>但是有一个特殊的方法，<strong>readResolve()</strong></p>
-<pre><code class="language-java">private Object readResolve() throws ReflectiveOperationException {
-    try {
-        Method deserialize = AccessController.doPrivileged(new PrivilegedExceptionAction&lt;Method&gt;() {
-            @Override
-            public Method run() throws Exception {
-                Method m = capturingClass.getDeclaredMethod(&quot;$deserializeLambda$&quot;, SerializedLambda.class);
-                m.setAccessible(true);
-                return m;
+            for(int i = 0; i &lt; types.length; ++i) {
+                System.err.println(&quot;  types[&quot; + i + &quot;]=&quot; + types[i].getName());
             }
-        });
 
-        return deserialize.invoke(null, this);
+            throw new IllegalArgumentException(&quot;Cannot find method &quot; + method);
+        }
     }
-    catch (PrivilegedActionException e) {
-        Exception cause = e.getException();
-        if (cause instanceof ReflectiveOperationException)
-            throw (ReflectiveOperationException) cause;
-        else if (cause instanceof RuntimeException)
-            throw (RuntimeException) cause;
-        else
-            throw new RuntimeException(&quot;Exception in SerializedLambda.readResolve&quot;, e);
+
+    public Class getReturnType() {
+        return ((Method)this.member).getReturnType();
     }
+
+    public Class[] getParameterTypes() {
+        return ((Method)this.member).getParameterTypes();
+    }
+
+    public Class[] getExceptionTypes() {
+        return ((Method)this.member).getExceptionTypes();
+    }
+
+    // 通过方法索引进行调用
+    public Object invoke(Object obj, Object[] args) throws InvocationTargetException {
+        return this.fc.invoke(this.index, obj, args);
+    }
+
+    // 返回持有的传统的JavaMethod
+    public Method getJavaMethod() {
+        return (Method)this.member;
+    }
+
 }
 </code></pre>
-<p>到这就明白了些，最终SerializedLambda进行反序列化时，是通过**readResolve()**方法返回的lambda表达式实例。</p>
-<p><code>Method m = capturingClass.getDeclaredMethod(&quot;$deserializeLambda$&quot;, SerializedLambda.class);</code></p>
-<p>最终是调用的lambda表达式所在声明类的 <strong><span class="katex"><span class="katex-mathml"><math><semantics><mrow><mi>d</mi><mi>e</mi><mi>s</mi><mi>e</mi><mi>r</mi><mi>i</mi><mi>a</mi><mi>l</mi><mi>i</mi><mi>z</mi><mi>e</mi><mi>L</mi><mi>a</mi><mi>m</mi><mi>b</mi><mi>d</mi><mi>a</mi></mrow><annotation encoding="application/x-tex">deserializeLambda</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.69444em;vertical-align:0em;"></span><span class="mord mathdefault">d</span><span class="mord mathdefault">e</span><span class="mord mathdefault">s</span><span class="mord mathdefault">e</span><span class="mord mathdefault" style="margin-right:0.02778em;">r</span><span class="mord mathdefault">i</span><span class="mord mathdefault">a</span><span class="mord mathdefault" style="margin-right:0.01968em;">l</span><span class="mord mathdefault">i</span><span class="mord mathdefault" style="margin-right:0.04398em;">z</span><span class="mord mathdefault">e</span><span class="mord mathdefault">L</span><span class="mord mathdefault">a</span><span class="mord mathdefault">m</span><span class="mord mathdefault">b</span><span class="mord mathdefault">d</span><span class="mord mathdefault">a</span></span></span></span></strong> 方法，这个方法在编译时就已经生成了。</p>
-<p>在这个方法中，会对SerializedLambda信息进行校验，校验正确，程序会调用invokeDynamic指令生成代表lambda的内部类class，也就是上面提到的多出来的 <strong>LambdaSerializeTest$$Lambda$4</strong>， 并且创建该内部类的对象，然后返回作为反序列化的最终对象。</p>
-<p>能力有限，里面的机制细节就不深究了。</p>
-<p>以上。</p>
-<h2 id="另一种支持序列化的方式">另一种支持序列化的方式</h2>
-<p><code>Function&lt;String, Long&gt; functionSerializableDemo = (Function&lt;String, Long&gt; &amp; Serializable)s -&gt; s -&gt; lambdaTest.toLong(s)};</code></p>
-<p>最终生成的内部类长这个样子，实现了Serializable接口，writeReplace()方法。</p>
-<pre><code class="language-java">final class LambdaSerializeTest$$Lambda$1 implements Function, Serializable {
-    private final LambdaSerializeTest arg$1;
-
-    private LambdaSerializeTest$$Lambda$1(LambdaSerializeTest var1) {
-        this.arg$1 = var1;
-    }
-
-    private static Function get$Lambda(LambdaSerializeTest var0) {
-        return new LambdaSerializeTest$$Lambda$1(var0);
-    }
-
-    @Hidden
-    public Object apply(Object var1) {
-        return LambdaSerializeTest.lambda$main$939380a7$1(this.arg$1, (String)var1);
-    }
-
-    private final Object writeReplace() {
-        return new SerializedLambda(
-          LambdaSerializeTest.class, 
-          &quot;java/util/function/Function&quot;, 
-          &quot;apply&quot;,
-          &quot;(Ljava/lang/Object;)Ljava/lang/Object;&quot;, 
-          6, 
-          &quot;suishen/redis/hash/mapping/test/LambdaSerializeTest&quot;, 
-          &quot;lambda$main$939380a7$1&quot;, 
-          &quot;(Lsuishen/redis/hash/mapping/test/LambdaSerializeTest;Ljava/lang/String;)Ljava/lang/Long;&quot;, 
-          &quot;(Ljava/lang/String;)Ljava/lang/Long;&quot;, 
-          new Object[]{this.arg$1});
-    }
-}
-</code></pre>
-]]></content>
-    </entry>
-    <entry>
-        <title type="html"><![CDATA[Lambda系列二：方法引用被编译成了什么]]></title>
-        <id>https://shiyuesheng.github.io/post/fang-fa-yin-yong-bei-bian-yi-cheng-liao-shi-me/</id>
-        <link href="https://shiyuesheng.github.io/post/fang-fa-yin-yong-bei-bian-yi-cheng-liao-shi-me/">
-        </link>
-        <updated>2021-04-02T06:28:02.000Z</updated>
-        <content type="html"><![CDATA[<blockquote>
-<p>先进行总结，方便回顾：</p>
-<p>lambda表达式同方法引用编译之后的基本一致，区别在于：</p>
-<ul>
-<li>lambda表达式会在声明类中生成私有静态方法，lambda表达式的业务逻辑也在其中</li>
-<li>方法引用不会生成私有静态方法，引用的方法在动态生成的内部类中调用</li>
-</ul>
-</blockquote>
-<p>有了之前编译lambda表达式的例子，这次废话不多说，直接开始。</p>
-<h2 id="一个简单的例子">一个简单的例子</h2>
-<pre><code class="language-java">public class LambdaTest {
-    public String getName() {
-        return &quot;9627&quot;;
-    }
-    public static void main(String[] args) {
-        Function&lt;LambdaTest, String&gt; functionDemo = LambdaTest::getName;
-    }
-}
-</code></pre>
-<p>使用命令编译 javac -g LambdaTest.java</p>
-<p>使用命令查看字节码 javap -v -p LambdaTest.class</p>
-<pre><code class="language-java">public static void main(java.lang.String[]);
-    descriptor: ([Ljava/lang/String;)V
-    flags: ACC_PUBLIC, ACC_STATIC
-    Code:
-      stack=1, locals=2, args_size=1
-         0: invokedynamic #6,  0              // InvokeDynamic #0:apply:()Ljava/util/function/Function;
-         5: astore_1
-         6: return
-
-BootstrapMethods:
-  0: #41 invokestatic java/lang/invoke/LambdaMetafactory.metafactory:
-    Method arguments:
-      #42 (Ljava/lang/Object;)Ljava/lang/Object;
-      #43 invokevirtual suishen/redis/hash/mapping/test/LambdaTest.getName:()Ljava/lang/String;
-      #44 (Lsuishen/redis/hash/mapping/test/LambdaTest;)Ljava/lang/String;
-</code></pre>
-<p>编译之后invokedynamic 指令跟之前编译lambda表达式一致，但是没有生成私有静态方法。</p>
-<p>运行下看看生成的内部类：</p>
-<p>执行命令 <strong>java -Djdk.internal.lambda.dumpProxyClasses TestLambda</strong></p>
-<p>使用命令查看内部类的字节码 <strong>javap -v -p LambdaTest$$Lambda$1.class</strong></p>
-<pre><code class="language-java">final class LambdaTest$$Lambda$1 implements Function {
-    private LambdaTest$$Lambda$1() {
-    }
-
-    @Hidden
-    public Object apply(Object var1) {
-        return ((LambdaTest)var1).getName();
-    }
-}
-</code></pre>
-<p>简单分析下：</p>
-<p>1、该内部类类名 LambdaTest$$Lambda$1</p>
-<p>2、实现了函数式接口Function 的apply方法</p>
-<p>3、apply方法内部对传入的参数进行强制类型转换，必须是LambdaTest类型的，符合预期</p>
-<p>3、apply方法内部调用了，LambdaTest实例的getName()方法，LambdaTest实例来自调用方传入</p>
-<h2 id="捕获变量的例子">捕获变量的例子</h2>
-<pre><code class="language-java">public class LambdaTest {
-    public Long toLong(String name) {
-        return 9527L;
-    }
-    public static void main(String[] args) {
-        LambdaTest lambdaTest = new LambdaTest();
-        Function&lt;String, Long&gt; functionDemo = lambdaTest::toLong;
-    }
-</code></pre>
-<pre><code class="language-java"> public static void main(java.lang.String[]);
-    descriptor: ([Ljava/lang/String;)V
-    flags: ACC_PUBLIC, ACC_STATIC
-    Code:
-      stack=2, locals=2, args_size=1
-         0: getstatic     #6                  // Field lambdaTest:Lsuishen/redis/hash/mapping/test/LambdaTest;
-         3: dup
-         4: invokevirtual #7                  // Method java/lang/Object.getClass:()Ljava/lang/Class;
-         7: pop
-         8: invokedynamic #8,  0              // InvokeDynamic #0:apply:(Lsuishen/redis/hash/mapping/test/LambdaTest;)Ljava/util/function/Function;
-        13: astore_1
-        14: return
-BootstrapMethods:
-  0: #44 invokestatic java/lang/invoke/LambdaMetafactory.metafactory:
-    Method arguments:
-      #45 (Ljava/lang/Object;)Ljava/lang/Object;
-      #46 invokevirtual suishen/redis/hash/mapping/test/LambdaTest.toLong:(Ljava/lang/String;)Ljava/lang/Long;
-      #47 (Ljava/lang/String;)Ljava/lang/Long;
-</code></pre>
-<pre><code class="language-java">final class LambdaTest$$Lambda$1 implements Function {
-    private final LambdaTest arg$1;
-    private LambdaTest$$Lambda$1(LambdaTest var1) {
-        this.arg$1 = var1;
-    }
-    private static Function get$Lambda(LambdaTest var0) {
-        return new LambdaTest$$Lambda$1(var0);
-    }
-    @Hidden
-    public Object apply(Object var1) {
-        return this.arg$1.toLong((String)var1);
-    }
-}
-</code></pre>
-<p>我们只关注下最终生成的内部类，简单分析下：</p>
-<p>1、该内部类类名 LambdaTest$$Lambda$1，</p>
-<p>2、实现了函数式接口Function 的apply方法</p>
-<p>3、内置了一个<strong>Field private final LambdaTest arg$1</strong> 这个实例属性在运行期动态调用，进行内部类实例化时，捕获自声明类上下文中的变量</p>
-<p>4、apply方法内部调用了，arg$1.toLong(String)，参数来自调用方传入</p>
-<h3 id="总结">总结：</h3>
-<h4 id="1-lambda表达式同方法引用编译之后的基本一致区别在于">1、lambda表达式同方法引用编译之后的基本一致，区别在于：</h4>
-<ul>
-<li>lambda表达式会在声明类中生成私有静态方法，lambda表达式的业务逻辑也在其中</li>
-<li>方法引用不会生成私有静态方法，引用的方法在动态生成的内部类中调用</li>
-</ul>
-<h4 id="2-方法引用-方法引用主体是方法已经定义好的方法逻辑都在方法中下游逻辑只管调用就好了-这也算是区别于lambda表达式地方吧逻辑代码块-code-所以lambda表达式的代码块在编译期中原封不动的放在了生成的私有静态方法中也算是有所归属-感觉像是编译期人为的向方法引用靠拢以期在运行期动态调用时达成共性的逻辑啊这一大段纯属猜测看个乐觉得有用就当是抛砖引玉了">2、方法引用、方法引用，主体是方法，已经定义好的方法，逻辑都在方法中，下游逻辑只管调用就好了。这也算是区别于lambda表达式地方吧（逻辑代码块 {code....} ），所以lambda表达式的代码块在编译期中原封不动的放在了生成的私有静态方法中，也算是有所归属。感觉像是编译期人为的向方法引用靠拢，以期在运行期动态调用时达成共性的逻辑（啊这一大段纯属猜测，看个乐，觉得有用，就当是抛砖引玉了）</h4>
-<ul>
-<li>不存在捕获变量：没有对象实体，下游逻辑传入对象实例，调用方法。</li>
-<li>存在捕获变量：存在对象实体，下游逻辑传入方法所需参数，调用方法。</li>
-</ul>
-<h2 id="疑问-胡天扯地">疑问-胡天扯地</h2>
-<pre><code class="language-java">private final static LambdaTest lambdaTest = new LambdaTest();
-LambdaTest.lambdaTest::toLong
-</code></pre>
-<p>LambdaTest.lambdaTest 是私有静态属性，类似这样的方法引用也是存在捕获变量的，意味着每次调用都会生成一个新的内部类实例，但是此时捕获的变量 LambdaTest.lambdaTest 是不可变的。</p>
-<p>个人觉得此种情况可以不用捕获变量，生成的内部类中，直接在方法体中嵌入这个对象，每次调用也不用生成新的内部类实例。</p>
-<p><strong>一</strong>是我草率了，因为毕竟是猜测，在我的知识盲区，可能有不能这么处理的原因。</p>
-<p><strong>二</strong>是官方目前没做优化，但是将来可能会对这种情况有优化？毕竟动态调用模式非常灵活，jvm内部的策略升级对我们是透明无感知的。</p>
-]]></content>
-    </entry>
-    <entry>
-        <title type="html"><![CDATA[Lambda系列一：Lambda表达式被编译成了什么]]></title>
-        <id>https://shiyuesheng.github.io/post/lambda-biao-da-shi-bei-bian-yi-cheng-liao-shi-me/</id>
-        <link href="https://shiyuesheng.github.io/post/lambda-biao-da-shi-bei-bian-yi-cheng-liao-shi-me/">
-        </link>
-        <updated>2021-04-02T06:26:55.000Z</updated>
-        <content type="html"><![CDATA[<h1 id="lambda表达式被编译成了什么">Lambda表达式被编译成了什么</h1>
+<h2 id="fastclass动态生成的子类字节码解析">FastClass动态生成的子类字节码解析</h2>
 <blockquote>
-<p>先进行总结，方便回顾：</p>
-<ul>
-<li>
-<p>编译时</p>
-<ul>
-<li>Lambda表达式会在当前的声明类中生成一个私有静态方法， 方法实现了Lambda表达式的代码逻辑</li>
-</ul>
-</li>
-<li>
-<ul>
-<li>生成invokedynamic指令， 调用bootstrap methods， 由java.lang.invoke.LambdaMetafactory.metafactory方法实现</li>
-</ul>
-</li>
-<li>
-<p>运行时</p>
-</li>
-<li>
-<ul>
-<li>invokedynamic指令调用metafactory方法。它会返回一个CallSite, 此CallSite返回目标类型的一个匿名实现类， 此类内部关联编译时生成的私有静态方法</li>
-<li>lambda表达式进行传递时，传递的是生成的内部类实例。</li>
-</ul>
-</li>
-</ul>
+<p>FastClass动态子类是Cglib动态生成的，同目标类是一对一的关系。内部对目标类的所有方法、构造器建立了索引。</p>
+<p>通过方法签名、方法名称、参数类型可以获取到对应的方法索引，方法调用就是非常直白的显式调用，绕过了反射机制，这样无疑更加效率。</p>
 </blockquote>
-<h2 id="一个简单的例子">一个简单的例子</h2>
-<pre><code class="language-java">public class LambdaTest {
-    public static final LambdaTest lambdaTest = new LambdaTest();
-    public String getName() {
-        return &quot;9627&quot;;
+<pre><code class="language-java">// TargetService 对应的动态生成的 FastClass
+public class TargetService$$FastClassByCGLIB$$7705815b extends FastClass {
+    // 构造器
+    public TargetService$$FastClassByCGLIB$$7705815b(Class var1) {
+        super(var1);
     }
-    public static void main(String[] args) {
-        Function&lt;?, String&gt; functionDemo = s -&gt; LambdaTest.lambdaTest.getName();
-    }
-}
-</code></pre>
-<p>使用命令编译 javac -g LambdaTest.java   （此时并没有生成内部类class文件）</p>
-<p>使用命令查看字节码 javap -v -p LambdaTest.class	（编译的文件过大，已屏蔽掉干扰信息，只关注lambda相关信息）</p>
-<pre><code class="language-java">public static void main(java.lang.String[]);
-    descriptor: ([Ljava/lang/String;)V
-    flags: ACC_PUBLIC, ACC_STATIC
-    Code:
-      stack=1, locals=2, args_size=1
-         0: invokedynamic #6,  0              // InvokeDynamic #0:apply:()Ljava/util/function/Function;
-         5: astore_1
-         6: return
 
-private static java.lang.String lambda$main$0(java.lang.Object);
-    descriptor: (Ljava/lang/Object;)Ljava/lang/String;
-    flags: ACC_PRIVATE, ACC_STATIC, ACC_SYNTHETIC
-    Code:
-      stack=1, locals=1, args_size=1
-         0: getstatic     #7                  // Field lambdaTest:Lsuishen/redis/hash/mapping/test/LambdaTest;
-         3: invokevirtual #8                  // Method getName:()Ljava/lang/String;
-         6: areturn
-         
-BootstrapMethods:
-  0: #46 invokestatic java/lang/invoke/LambdaMetafactory.metafactory:(此处方法签名描述省略)
-    Method arguments:
-      #47 (Ljava/lang/Object;)Ljava/lang/Object;
-      #48 invokestatic suishen/redis/hash/mapping/test/LambdaTest.lambda$main$0:(Ljava/lang/Object;)Ljava/lang/String;
-      #49 (Ljava/lang/Object;)Ljava/lang/String;
-</code></pre>
-<h3 id="invokedynamic-指令">invokedynamic 指令</h3>
-<p>可以看到例子中的lambda表达式   <code>s -&gt; LambdaTest.lambdaTest.getName()</code> 编译后生成了 invokedynamic 指令，<code>#6</code>定位到常量池中下面的记录。</p>
-<p>​			<em>#6 = InvokeDynamic      #0:#50         // #0:apply:()Ljava/util/function/Function;</em></p>
-<p>其中 <code>#0</code> 指向的 BootstrapMethods 区的静态工厂方法   <code>java.lang.invoke.LambdaMetafactory.metafactory</code></p>
-<p>LambdaMetafactory.metafactory()方法会利用asm字节码框架为 lambda表达式生成内部类，底层细节，此处不做深究。</p>
-<h3 id="私有静态方法">私有静态方法</h3>
-<p>编译后的class多了一个私有静态方法， LambdaTest.lambda$main$0(Object),尝试将字节码翻译成java代码，如下：</p>
-<pre><code class="language-java">private static java.lang.String lambda$main$0(Object o) {
-		return LambdaTest.LambdaTest.getName();
+    // 方法签名获取对应的方法索引，方法签名一般在构造 FastMethod的时候会用到
+    // 里面的逻辑很直白，不坐进一步的分析
+    // 值得注意的是，equals、toString、hashCode也进行了索引
+    public int getIndex(Signature var1) {
+        String var10000 = var1.toString();
+        switch(var10000.hashCode()) {
+        case -909388886:
+            if (var10000.equals(&quot;say()V&quot;)) {
+                return 0;
+            }
+            break;
+        case 1826985398:
+            if (var10000.equals(&quot;equals(Ljava/lang/Object;)Z&quot;)) {
+                return 1;
+            }
+            break;
+        case 1913648695:
+            if (var10000.equals(&quot;toString()Ljava/lang/String;&quot;)) {
+                return 2;
+            }
+            break;
+        case 1984935277:
+            if (var10000.equals(&quot;hashCode()I&quot;)) {
+                return 3;
+            }
+        }
+
+        return -1;
+    }
+
+    // 方法名称 参数类型获取方法索引
+    public int getIndex(String var1, Class[] var2) {
+        switch(var1.hashCode()) {
+        case -1776922004:
+            if (var1.equals(&quot;toString&quot;)) {
+                switch(var2.length) {
+                case 0:
+                    return 2;
+                }
+            }
+            break;
+        case -1295482945:
+            if (var1.equals(&quot;equals&quot;)) {
+                switch(var2.length) {
+                case 1:
+                    if (var2[0].getName().equals(&quot;java.lang.Object&quot;)) {
+                        return 1;
+                    }
+                }
+            }
+            break;
+        case 113643:
+            if (var1.equals(&quot;say&quot;)) {
+                switch(var2.length) {
+                case 0:
+                    return 0;
+                }
+            }
+            break;
+        case 147696667:
+            if (var1.equals(&quot;hashCode&quot;)) {
+                switch(var2.length) {
+                case 0:
+                    return 3;
+                }
+            }
+        }
+
+        return -1;
+    }
+
+    // 参数类型获取构造器索引
+    public int getIndex(Class[] var1) {
+        switch(var1.length) {
+        case 0:
+            return 0;
+        default:
+            return -1;
+        }
+    }
+
+    // 方法调用，非常直白的显式调用，绕过了反射
+    public Object invoke(int var1, Object var2, Object[] var3) throws InvocationTargetException {
+        TargetService var10000 = (TargetService)var2;
+        int var10001 = var1;
+
+        try {
+            switch(var10001) {
+            case 0:
+                var10000.say();
+                return null;
+            case 1:
+                return new Boolean(var10000.equals(var3[0]));
+            case 2:
+                return var10000.toString();
+            case 3:
+                return new Integer(var10000.hashCode());
+            }
+        } catch (Throwable var4) {
+            throw new InvocationTargetException(var4);
+        }
+
+        throw new IllegalArgumentException(&quot;Cannot find matching method/constructor&quot;);
+    }
+
+    // 构造器调用
+    public Object newInstance(int var1, Object[] var2) throws InvocationTargetException {
+        TargetService var10000 = new TargetService;
+        TargetService var10001 = var10000;
+        int var10002 = var1;
+
+        try {
+            switch(var10002) {
+            case 0:
+                var10001.&lt;init&gt;();
+                return var10000;
+            }
+        } catch (Throwable var3) {
+            throw new InvocationTargetException(var3);
+        }
+
+        throw new IllegalArgumentException(&quot;Cannot find matching method/constructor&quot;);
+    }
+
+    // 最大的索引值
+    public int getMaxIndex() {
+        return 3;
+    }
+
 }
 </code></pre>
-<p>方法逻辑跟栗子中的lambda逻辑一致。</p>
-<p>编译期间未看到生成的相关内部类。</p>
-<h2 id="运行lambda">运行Lambda</h2>
-<p>执行命令 <strong>java -Djdk.internal.lambda.dumpProxyClasses TestLambda</strong></p>
-<p>运行结束后会在同级目录生成一个内部类的class文件   <strong>LambdaTest$$Lambda$1.class</strong></p>
-<p>使用命令查看内部类的字节码 <strong>javap -v -p LambdaTest$$Lambda$1.class</strong>，也可以在idea中直接打开查看，此处直观的展示了idea反编译后的内容</p>
-<pre><code class="language-java">final class LambdaTest$$Lambda$1 implements Function {
-    private LambdaTest$$Lambda$1() {
-    }
+]]></content>
+    </entry>
+    <entry>
+        <title type="html"><![CDATA[代理精进系列六：Cglib动态代理]]></title>
+        <id>https://shiyuesheng.github.io/post/dai-li-jing-jin-xi-lie-liu-cglib-dong-tai-dai-li/</id>
+        <link href="https://shiyuesheng.github.io/post/dai-li-jing-jin-xi-lie-liu-cglib-dong-tai-dai-li/">
+        </link>
+        <updated>2021-04-25T14:54:17.000Z</updated>
+        <content type="html"><![CDATA[<h1 id="cglib动态代理">Cglib动态代理</h1>
+<blockquote>
+<p>开场白直接抄录 &lt;路人甲Java&gt; 公众号：</p>
+<h3 id="什么是cglib">什么是Cglib？</h3>
+<p>jdk动态代理只能为接口创建代理，使用上有局限性。实际的场景中我们的类不一定有接口，此时如果我们想为普通的类也实现代理功能，我们就需要用到cglib来实现了。</p>
+<p>cglib是一个强大、高性能的字节码生成库，它用于在运行时扩展Java类和实现接口；本质上它是通过动态的生成一个子类去覆盖所要代理的类（非final修饰的类和方法）。Enhancer可能是CGLIB中最常用的一个类，和jdk中的Proxy不同的是，Enhancer既能够代理普通的class，也能够代理接口。Enhancer创建一个被代理对象的子类并且拦截所有的方法调用（包括从Object中继承的toString和hashCode方法）。Enhancer不能够拦截final方法，例如Object.getClass()方法，这是由于Java final方法语义决定的。基于同样的道理，Enhancer也不能对final类进行代理操作。</p>
+<p>CGLIB作为一个开源项目，其代码托管在github，地址为：https://github.com/cglib/cglib</p>
+<h3 id="cglib组成结构">Cglib组成结构</h3>
+<figure data-type="image" tabindex="1"><img src="https://tva1.sinaimg.cn/large/008eGmZEly1gpgzqbjmm0j30ci07rgnp.jpg" alt="image-20210412152614419" loading="lazy"></figure>
+<p>CGLIB底层使用了ASM（一个短小精悍的字节码操作框架）来操作字节码生成新的类。除了CGLIB库外，脚本语言（如Groovy和BeanShell）也使用ASM生成字节码。ASM使用类似SAX的解析器来实现高性能。我们不鼓励直接使用ASM，因为它需要对Java字节码的格式足够的了解。</p>
+<p>spring已将第三方cglib jar包中所有的类集成到spring自己的jar包中，本系列内容都是和spring相关的，为了方便，我们直接使用spring内部已集成的来讲解。</p>
+</blockquote>
+<h3 id="enhancer-代码增强器cglib最核心的类">Enhancer - 代码增强器，Cglib最核心的类</h3>
+<pre><code class="language-java">public class Enhancer extends AbstractClassGenerator {
+	/**
+	 * 创建一个新的Enhancer 。
+	 * 每个生成的对象都应使用一个新的Enhancer对象，并且不应在线程之间共享。
+	 * 要创建生成的类的其他实例，请使用Factory接口。
+	 */
+	public Enhancer() {}
   
-    @Hidden
-    public Object apply(Object var1) {
-        return LambdaTest.lambda$main$0(var1);
-    }
+	/**
+	 * 设置生成的类将要扩展的类。
+	 * 为方便起见，如果提供的超类实际上是一个接口，则将使用适当的参数来调用setInterfaces。
+	 * 非接口参数不能声明为final，并且必须具有可访问的构造函数。
+	 */
+	public void setSuperclass(Class superclass) {}
+  
+	/**
+	 * 设置要实现的接口。 无论在此处指定什么内容，都将始终实现Factory接口。
+	 */
+	public void setInterfaces(Class[] interfaces) {}
+  
+	/**
+	 * 设置要使用的单个Callback。
+	 * 如果使用createClass则忽略此设置。(为啥要忽略，会报错啊- -！)
+	 */
+	public void setCallback(final Callback callback) {}
+  
+	/**
+	 * 设置要使用的回调数组。
+	 * 如果使用createClass则忽略此设置。
+	 * 您必须使用CallbackFilter为代理类中的每个方法指定此数组的索引。
+	 * 如果配置了多个Callback，必须同步的配置CallbackFilter
+	 */
+	public void setCallbacks(Callback[] callbacks) {}
+  
+	/**
+	 * 设置要使用的单一Callback类型。
+	 * 调用createClass时，可以使用它代替setCallback ，因为可能无法拥有实际的回调实例数组。
+	 */
+	public void setCallbackType(Class callbackType) {}
+  
+	/**
+	 * 设置要使用的回调类型数组。
+	 * 调用createClass时，可以使用它代替setCallbacks ，因为可能无法拥有实际的回调实例数组。
+	 * 必须使用CallbackFilter为代理类中的每个方法指定此数组的索引。
+	 */
+	public void setCallbackTypes(Class[] callbackTypes) {}
+  
+	/**
+	 * 设置CallbackFilter用于映射生成的类方法的一个特定的回调索引。
+	 * 新的对象实例将始终使用相同的映射，但可能使用不同的实际回调对象。
+	 */
+	public void setCallbackFilter(CallbackFilter filter) {}
+
+	/**
+	 * 设置增强的对象实例是否应实现Factory接口。默认是true。
+	 * 这是为需要代理与目标之间更难以区分的工具而添加的。
+	 * 同样，在某些情况下，可能有必要禁用Factory接口以防止代码更改基础回调。
+	 * @param useFactory
+	 */
+	public void setUseFactory(boolean useFactory) {}
+  
+/**
+	 * 设置是否将拦截在代理的构造函数中调用的方法。 默认值是true。
+	 * 未拦截的方法将调用代理的基类的方法（如果存在）。
+	 */
+	public void setInterceptDuringConstruction(boolean interceptDuringConstruction) {}
+  
+	/**
+	 * 如有必要，生成一个新类，并使用指定的回调（如果有）来创建一个新的对象实例。
+	 * 如果存在缓存，则使用缓存。
+	 * 使用超类的no-arg构造函数。
+	 */
+	public Object create() {}
+  
+	
+	/**
+	 * 如有必要，生成一个新类，并使用指定的回调（如果有）来创建一个新的对象实例。
+	 * 使用与argumentTypes参数匹配并带有给定arguments的超类的构造函数。
+	 */
+	public Object create(Class[] argumentTypes, Object[] arguments) {}
+
+  	
+	/**
+	 * 如有必要，生成一个新类，并在不创建新实例的情况下将其返回。
+	 * 这将忽略已设置的任何回调。
+	 *
+	 * 要创建新实例，您将必须使用反射，并且构造函数期间调用的方法将不会被拦截。
+	 * 为避免此问题，请使用multi-arg create方法。
+	 */
+	public Class createClass() {}
+  
 }
 </code></pre>
-<p>简单分析下：</p>
-<p>1、该内部类类名 LambdaTest$$Lambda$1，</p>
-<p>2、实现了函数式接口Function 的apply方法，</p>
-<p>3、方法内部调用的上文提到的，该内部类所在的声明类，编译后所生成的私有静态方法。LambdaTest.lambda$main$0(Object)</p>
-<p>到这，就可以把lambda运行逻辑串联起来了。</p>
-<ul>
-<li>编译时lambda表达式会在当前声明类，生成一个私有静态方法，该方法逻辑与lambda逻辑相同。</li>
-<li>运行时动态的使用asm字节码工具生成一个实现了目标函数式接口的内部类。</li>
-<li>内部类进行实例化，方法间传递的是内部类的实例</li>
-<li>调用内部类实例的函数式接口方法（SAM Single Abstract Method）</li>
-<li>内部继续调用了声明类的私有静态方法，执行我们编写的真正的lambda表达式逻辑</li>
-</ul>
-<h2 id="捕获变量的例子">捕获变量的例子</h2>
-<p>在匿名内部类中调用外部参数时，参数必须声明为final。</p>
-<p>Lambda表达式内也可以引用上下文中的变量，称之为捕获变量、捕获参数。</p>
-<p>Lambda表达式内捕获的外部变量，可以不声明为final类型，但是上下文语义中必须等同与final，也就是在后续逻辑中不可修改。</p>
-<p>同样的一个简单的例子，lambda表达式 <code>s -&gt; lambdaTest.getName()</code>捕获了上下文中的变量 lambdaTest。</p>
-<pre><code class="language-java">public class LambdaTest {
-    public String getName() {
-        return &quot;9627&quot;;
-    }
-    public static void main(String[] args) {
-        LambdaTest lambdaTest = new LambdaTest();
-        Function&lt;?, String&gt; functionDemo = s -&gt; lambdaTest.getName();
-    }
+<p>上面简单介绍了Enhancer类中常用的方法，下面写几个常见的测试用例，先对Cglib动态代理有个感性的认知。</p>
+<h3 id="被代理目标类基类">被代理目标类基类</h3>
+<pre><code class="language-java">public class TargetService {
+
+	private String name;
+
+	public TargetService() {
+		this.name = &quot;目标类-玄戈大人&quot;;
+	}
+
+	public TargetService(String name) {
+		this.name = &quot;目标类-&quot; + name;
+	}
+
+	public void say() {
+		System.out.println(&quot;目标类 - say&quot;);
+	}
+
+	public void runToSay() {
+		System.out.println(&quot;目标类 - run to say&quot;);
+    	 // 继续调用了当前实例的方法
+    	 // this 如果是代理类实例，此处方法调用也会被拦截一次
+          // this 如果是目标类实例，此处方法调用将不会进行拦截
+		this.say();
+	}
+
+	public String getName() {
+		System.out.println(&quot;目标类 - get&quot;);
+		return this.name;
+	}
 }
 </code></pre>
-<p>使用命令编译 javac -g LambdaTest.java</p>
-<p>使用命令查看字节码 javap -v -p LambdaTest.class</p>
-<pre><code class="language-java">public static void main(java.lang.String[]);
-    descriptor: ([Ljava/lang/String;)V
-    flags: ACC_PUBLIC, ACC_STATIC
-    Code:
-      stack=2, locals=3, args_size=1
-         0: new           #6                  // class suishen/redis/hash/mapping/test/LambdaTest
-         3: dup
-         4: invokespecial #7                  // Method &quot;&lt;init&gt;&quot;:()V
-         7: astore_1
-         8: aload_1
-         9: invokedynamic #8,  0              // InvokeDynamic #0:apply:(Lsuishen/redis/hash/mapping/test/LambdaTest;)Ljava/util/function/Function;
-        14: astore_2
-        15: return
-
-private static java.lang.String lambda$main$0(suishen.redis.hash.mapping.test.LambdaTest, java.lang.Object);
-    descriptor: (Lsuishen/redis/hash/mapping/test/LambdaTest;Ljava/lang/Object;)Ljava/lang/String;
-    flags: ACC_PRIVATE, ACC_STATIC, ACC_SYNTHETIC
-    Code:
-      stack=1, locals=2, args_size=2
-         0: aload_0
-         1: invokevirtual #9                  // Method getName:()Ljava/lang/String;
-         4: areturn
-BootstrapMethods:
-  0: #45 invokestatic java/lang/invoke/LambdaMetafactory.metafactory:(此处方法签名描述省略)
-    Method arguments:
-      #46 (Ljava/lang/Object;)Ljava/lang/Object;
-      #47 invokestatic suishen/redis/hash/mapping/test/LambdaTest.lambda$main$0:(Lsuishen/redis/hash/mapping/test/LambdaTest;Ljava/lang/Object;)Ljava/lang/String;
-      #48 (Ljava/lang/Object;)Ljava/lang/String;
-</code></pre>
-<h3 id="私有静态方法-2">私有静态方法</h3>
-<p>尝试将字节码翻译成java代码，看下区别在哪里。</p>
-<pre><code class="language-java">private static java.lang.String lambda$main$0(LambdaTest lambdaTest, Object o) {
-		return lambdaTest.getName();
+<h3 id="被代理的目标接口">被代理的目标接口</h3>
+<pre><code class="language-java">public interface ITargetService {
+   void fly();
 }
 </code></pre>
-<p>方法逻辑跟栗子中的lambda逻辑一致。但是方法参数多了一个LambdaTest lambdaTest。</p>
-<h3 id="内部类">内部类</h3>
-<p>执行命令 <strong>java -Djdk.internal.lambda.dumpProxyClasses TestLambda</strong></p>
-<p>使用命令查看内部类的字节码 <strong>javap -v -p LambdaTest.class</strong>，也可以在idea中直接打开查看，此处直观的展示了idea反编译后的内容</p>
-<pre><code class="language-java">final class LambdaTest$$Lambda$1 implements Function {
-    private final LambdaTest arg$1;
+<h2 id="methodinterceptor">MethodInterceptor</h2>
+<p>MethodInterceptor 是最原始、最通用、最万能的的回调类型 ，按AOP术语，它启用“around advice”- 环绕通知。</p>
+<p>也就是说，你可以在调用super方法之前和之后都调用自定义代码。</p>
+<p>另外，你可以在调用super方法之前修改传入的方法参数，或者根本不调用super方法。（翻译过来就是，方法调用的过程老子给你拦住了，想干啥你自己看着办，随便搞。哦？那我SpringFramework可就不客气了，后面会详细分析SpringFramework 中的回调都做了哪些骚操作）</p>
+<pre><code class="language-java">	public static void simpleMethodInterceptor() {
+		// 创建Enhancer对象
+		Enhancer enhancer = new Enhancer();
+		// 设置被代理类型
+		enhancer.setSuperclass(TargetService.class);
+		// 设置回调，必须实现org.springframework.cglib.proxy.Callback接口。
+		enhancer.setCallback(new MethodInterceptor() {
+			/**
+			 * 当调用代理对象的方法时，会被intercept方法处理
+			 * 此处可以植入环绕增强逻辑，调用被代理类方法，也可以不调用
+			 * @param o 代理对象
+			 * @param method 被代理类的方法
+			 * @param objects 调用方法传递的参数
+			 * @param methodProxy 方法代理
+			 */
+			@Override
+			public Object intercept(Object o, Method method, Object[] objects, MethodProxy methodProxy) throws Throwable {
+				System.out.println(&quot;Cglib拦截方法 before：&quot; + method.getName());
+				Object result = methodProxy.invokeSuper(o, objects);
+				System.out.println(&quot;Cglib拦截方法 after：&quot; + method.getName());
+				return result;
+			}
+		});
 
-    private LambdaTest$$Lambda$1(LambdaTest var1) {
-        this.arg$1 = var1;
-    }
-
-    private static Function get$Lambda(LambdaTest var0) {
-        return new LambdaTest$$Lambda$1(var0);
-    }
-
-    @Hidden
-    public Object apply(Object var1) {
-        return LambdaTest.lambda$main$0(this.arg$1, var1);
-    }
+		TargetService targetService = (TargetService) enhancer.create(new Class[]{String.class}, new Object[]{&quot;shiyuesheng&quot;});
+		targetService.say();
+		System.out.println(&quot;------------&quot;);
+		targetService.runToSay();
+    	System.out.println(&quot;------------&quot;);
+		System.out.println(targetService.getName());
+	}
 }
 </code></pre>
-<p>简单分析下：</p>
-<p>1、该内部类类名 LambdaTest$$Lambda$1，</p>
-<p>2、实现了函数式接口Function 的apply方法，</p>
-<p>3、内置了一个<strong>Field private final LambdaTest arg$1</strong> 这个实例属性在运行期动态调用，进行内部类实例化时，捕获自声明类上下文中的变量</p>
-<p>4、函数式接口方法内部调用的上文提到的私有静态方法，同时传入捕获的变量。前后呼应。</p>
-<p>梳理下存在捕获变量的lambda流程：</p>
-<ul>
-<li>编译时lambda表达式会在当前声明类，生成一个私有静态方法，该方法逻辑与lambda逻辑相同。如果lambda表达式有捕获变量，则方法会多出与对应类型的参数。</li>
-<li>运行时动态的使用asm字节码工具生成一个实现了目标函数式接口的内部类。如果lambda表达式有捕获变量，则内部类中会多出与之对应的属性。（<em><strong>此处大胆假设，因为不管执行多少次，生成的内部类class都是一样的，所以运行时应该会优化成只执行一次</strong></em>）</li>
-<li>内部类进行实例化，方法间传递的是内部类的实例。（<em><strong>此处大胆假设，因为捕获了上下文中的变量，而这个变量在运行时是变化的，不确定的，所以每次调用都生成的新的内部类实例</strong></em>）</li>
-<li>调用内部类实例的函数式接口方法（SAM Single Abstract Method）</li>
-<li>内部继续调用了声明类的私有静态方法，执行我们编写的真正的lambda表达式逻辑</li>
-</ul>
-<h2 id="重复的lambda表达式">重复的Lambda表达式</h2>
-<h3 id="多个长得一样的lambda表达式">多个长得一样的lambda表达式</h3>
-<pre><code class="language-java">public static void main(String[] args) {
-    LambdaTest lambdaTest = new LambdaTest();
-    Function&lt;?, String&gt; functionDemo = s -&gt; lambdaTest.getName();
-    Function&lt;?, String&gt; functionDemo1 = s -&gt; lambdaTest.getName();
-}
+<p><code>org.springframework.cglib.proxy.MethodInterceptor#intercept</code></p>
+<p>代理的所有方法都会被MethodInterceptor#intercept拦截，参数上面的注释很详细，不在多做描述。说下我在理解这部分功能时的疑问。</p>
+<ol>
+<li>Method，MethodProxy 为什么会有两个方法，这两个有什么区别？这里暂且按下，后面分析生成的动态代理类结构时再详细彻底的了解MethodProxy。</li>
+<li>从参数里面看不到目标类实例，也就是说上面这个简单场景只是生成了一个继承了TargetService的代理类实例，<code>methodProxy.invokeSuper(o, objects);</code>这个地方也是就是调用的当前代理类实例的父类方法，但是了解过springbean生命周期的会知道，是先实例化了springbean实例并进行初始化后才生成的代理类，那我先前生成的springbean实例跑哪去了呢？spring容器中存放的是我原本的springbean还是增强后的代理类呢？</li>
+</ol>
+<p>第二个问题比较好想明白，例子中的MethodInterceptor我们是通过匿名内部类使用的，它可以捕获外部的变量，我们只要在外部生成一个配置好的TargetService实例传进匿名内部类，就好了。intercept拦截方法里就可以调用我们自己的目标类实例的实例方法了。</p>
+<p>如果复杂一点，我们自己定义一个MethodInterceptor的实现类，内部配置N多属性，将定制好的回调实例传入enhancer.setCallback方法，SpringFramework就是这么干的，来看下org.springframework.aop.framework.CglibAopProxy中的这个内部类：</p>
+<pre><code class="language-java">// 这是一个具体的MethodInterceptor实现类
+private static class DynamicAdvisedInterceptor implements MethodInterceptor, Serializable {
+  // 支撑数据，里面可以包含我们自己的目标类实例，例如springbean
+  private final AdvisedSupport advised;
+   // 构造器传入支撑数据	
+   public DynamicAdvisedInterceptor(AdvisedSupport advised) {
+      this.advised = advised;
+   }
 
-</code></pre>
-<ul>
-<li>
-<p>编译后会生成两个invokedynamic命令，两个私有静态方法</p>
-</li>
-<li>
-<p>运行时会生成两个内部类class</p>
-</li>
-</ul>
-<h3 id="循环同一个lambda表达式">循环同一个lambda表达式</h3>
-<pre><code class="language-java">public static void main(String[] args) {
-    LambdaTest lambdaTest = new LambdaTest();
-    for (int i = 0; i &lt; 10; i++) {
-        Function&lt;?, String&gt; functionDemo = s -&gt; lambdaTest.getName();
-    }
+  // 拦截方法，内部就可以用到上面的支撑数据，spring aop、@Lazy注解等内部拦截原理都在这个方法里面
+   public Object intercept(Object proxy, Method method, Object[] args, MethodProxy methodProxy) throws Throwable {}
 }
-
 </code></pre>
-<ul>
-<li>
-<p>编译后会生成一个invokedynamic命令，一个私有静态方法</p>
-</li>
-<li>
-<p>运行时会生成一个内部类class</p>
-</li>
-</ul>
-<h2 id="测试生成的实例是否相同">测试生成的实例是否相同</h2>
-<h3 id="不存在捕获变量">不存在捕获变量</h3>
-<pre><code class="language-java">public final static LambdaTest lambdaTest = new LambdaTest();
-public static void main(String[] args) {
-    LambdaTest lambdaTest = LambdaTest.lambdaTest;
-    for (int i = 0; i &lt; 5; i++) {
-        Function&lt;?, String&gt; functionDemo = s -&gt; LambdaTest.lambdaTest.getName();
-        System.out.println(functionDemo);
-    }
-}
-打印信息：
-suishen.redis.hash.mapping.test.LambdaTest$$Lambda$1/1973336893@4cdf35a9
-suishen.redis.hash.mapping.test.LambdaTest$$Lambda$1/1973336893@4cdf35a9
-suishen.redis.hash.mapping.test.LambdaTest$$Lambda$1/1973336893@4cdf35a9
-suishen.redis.hash.mapping.test.LambdaTest$$Lambda$1/1973336893@4cdf35a9
-suishen.redis.hash.mapping.test.LambdaTest$$Lambda$1/1973336893@4cdf35a9
-
-</code></pre>
-<p>生成的实例是相同的。</p>
-<h3 id="存在捕获变量">存在捕获变量</h3>
-<pre><code class="language-java">public final static LambdaTest lambdaTest = new LambdaTest();
-public static void main(String[] args) {
-    LambdaTest lambdaTest = new LambdaTest();
-    for (int i = 0; i &lt; 5; i++) {
-        Function&lt;?, String&gt; functionDemo = s -&gt; lambdaTest.getName();
-        System.out.println(functionDemo);
-    }
-}
-打印信息：
-suishen.redis.hash.mapping.test.LambdaTest$$Lambda$1/1973336893@45fe3ee3
-suishen.redis.hash.mapping.test.LambdaTest$$Lambda$1/1973336893@4cdf35a9
-suishen.redis.hash.mapping.test.LambdaTest$$Lambda$1/1973336893@4c98385c
-suishen.redis.hash.mapping.test.LambdaTest$$Lambda$1/1973336893@5fcfe4b2
-suishen.redis.hash.mapping.test.LambdaTest$$Lambda$1/1973336893@6bf2d08e
-
-</code></pre>
-<p>生成的实例是不同的</p>
-<h3 id="存在捕获变量捕获变量是类的静态属性">存在捕获变量，捕获变量是类的静态属性</h3>
-<pre><code class="language-java">public final static LambdaTest lambdaTest = new LambdaTest();
-public static void main(String[] args) {
-    LambdaTest lambdaTest = LambdaTest.lambdaTest;
-    for (int i = 0; i &lt; 5; i++) {
-        Function&lt;?, String&gt; functionDemo = s -&gt; lambdaTest.getName();
-        System.out.println(functionDemo);
-    }
-}
-打印信息：
-suishen.redis.hash.mapping.test.LambdaTest$$Lambda$1/1973336893@45fe3ee3
-suishen.redis.hash.mapping.test.LambdaTest$$Lambda$1/1973336893@4cdf35a9
-suishen.redis.hash.mapping.test.LambdaTest$$Lambda$1/1973336893@4c98385c
-suishen.redis.hash.mapping.test.LambdaTest$$Lambda$1/1973336893@5fcfe4b2
-suishen.redis.hash.mapping.test.LambdaTest$$Lambda$1/1973336893@6bf2d08e
-
-</code></pre>
-<p>生成的实例是不同的</p>
-<h3 id="总结">总结：</h3>
-<ul>
-<li>如果不存在捕获变量，每次调用生成的实例是相同的</li>
-<li>如果存在捕获变量，每次调用生成的实例是不相同的</li>
-</ul>
-<p>与猜想一致，以上。</p>
+<p>简单整理下，MethodInterceptor拦截器可以拿到代理类，源生Method，代理MethodProxy，方法真实参数，以及我们自己定制的MethodInterceptor支撑数据，万事具备。</p>
+<p>intercept内部我们可以用Method、MethodProxy去invoke代理类、目标类的方法，当然也可以不进行调用。在这些调用的前前后后可以植入增强逻辑、缓存逻辑等等，当然也可以不进行调用。</p>
+<p>所以MethodInterceptor类型的回调是最通用万能的，满足任何拦截需求，但这往往是过大的，很多没那么复杂的拦截需求，为了简化、提高性能（MethodProxy内部使用FastClass机制，会有额外的资源占用和性能损耗），我们一起看看Cglib提供的一些特殊的Callback。（注意-下面提到的功能，使用MethodInterceptor都可以实现）</p>
 <blockquote>
-<p><em>来自网络</em></p>
-<h1 id="lambda表达式的转换策略">Lambda表达式的转换策略</h1>
-<p>Brian Goetz是Oracle的Java语言架构师， JSR 335(Lambda Expression)规范的lead, 写了几篇Lambda设计方面的文章， 其中之一就是Translation of Lambda Expressions。这篇文章介绍了Java 8 Lambda设计时的考虑以及实现方法。</p>
-<p>他提到， Lambda表达式可以通过内部类， method handle, dynamic proxy等方式实现， 但是这些方法各有优劣。真正要实现Lambda表达式， 必须兼顾两个目标：一是不引入特定策略，以期为将来的优化提供最大的灵活性， 二是保持类文件格式的稳定。通过Java 7中引入的<strong>invokedynamic</strong> （JSR 292）, 可以很好的兼顾这两个目标。</p>
-<p><strong>invokedynamic</strong> 在缺乏静态类型信息的情况下可以支持有效的灵活的方法调用。主要是为了日益增长的运行在JVM上的动态类型语言， 如Groovy, JRuby。</p>
-<p><strong>invokedynamic</strong> 将Lambda表达式的转换策略推迟到运行时， 这也意味着我们现在编译的代码在将来的转换策略改变的情况下也能正常运行。</p>
-<p>编译器在编译的时候， 会将Lambda表达式的表达式体 (lambda body)脱糖(desugar) 成一个方法，此方法的参数列表和返回类型和lambda表达式一致， 如果有捕获参数， 脱糖的方法的参数可能会更多一些， 并会产生一个<strong>invokedynamic</strong>调用， 调用一个call site。（如果是一个方法引用的话，会进行不一样的处理，不会脱糖成静态方法，而是将方法调用写入了生成的内部类中）</p>
-<p>这个call site被调用时会返回lambda表达式的目标类型(functional interface)的一个实现类。这个call site称为这个lambda表达式的<em>lambda factory</em>。 <em>lambda factory</em>的bootstrap方法是一个标准方法， 叫做<em>lambda metafactory</em>。</p>
-<p>编译器在转换lambda表达式时， 可以推断出表达式的参数类型，返回类型以及异常， 称之为<code>natural signature</code>， 我们将目标类型的方法签名称之为<code>lambda descriptor</code>, lambda factory的返回对象实现了函数式接口， 并且关联的表达式的代码逻辑， 称之为<code>lambda object</code>。</p>
+<p><strong>拦截内部方法调用</strong> - 目标类TargetService中的runToSay方法内部调用了其他的当前实例方法。这次内部调用会被拦截吗？</p>
+<pre><code class="language-java">public void runToSay() {
+	System.out.println(&quot;目标类 - run to say&quot;);
+	this.say();
+}
+</code></pre>
+<ul>
+<li>当前实例this是代理类，那么这个内部方法调用会被拦截</li>
+<li>当前实例this是目标类，那么这个内部方法调不用会被拦截。这也是大部分业务场景希望的。如果在这种情况依然希望被拦截，需要借助AopContext，将代理类暴露在线程上下文中，或者将方法分离到另一个类中进行代理。</li>
+</ul>
+<p>来看一个典型的场景：</p>
+<pre><code class="language-java">@Configuration
+public class AppConfig{
+  	  @Bean
+        public BeanA beanA() {
+         return new BeanA();
+        }
+
+        @Bean
+        public BeanB beanB() {
+        BeanA a = beanA();
+         return new BeanB(a);
+        }
+
+        @Bean
+        public BeanC beanC() {
+        BeanA a = beanA();
+        return new BeanC(a);
+        }
+}
+</code></pre>
+<p>@Configuration 注解的配置类， beanA()被多次引用，但是最终返回的是同一个BeanA，BeanA在容器中也只保存了一份，这种神奇的操作是如何实现的呢？spring中遇事不决，动态代理。</p>
+<p>被@Configuration标注的配置类最终注入到容器中的是一个Cglib代理类，beanB、beanC方法中对 beanA()的调用，其实是通过代理类发起的调用，从上面的分析我们知道，这种调用是可以被拦截到的，剩下的就是骚操作了。</p>
+<p>不妨设想一下我们自己怎么实现每次拦截返回的是同一个bean，很简单第一次拦截创建新的实例，然后放入容器中；后续的拦截直接去容器中查找是否存在，然后返回。</p>
+<p>org.springframework.context.annotation.ConfigurationClassEnhancer.BeanMethodInterceptor implements MethodInterceptor, ConditionalCallback</p>
+<p>这就是作用在@Configuration配置类上的回调，感兴趣的可以看下相应的源码。</p>
 </blockquote>
+<h2 id="fixedvalue">FixedValue</h2>
+<p>每次方法调用都会被拦截，返回修订值，并不继续调用被代理类方法。</p>
+<p>确保返回的修订值类型同被代理类返回值类型一致。不然会抛出强制转换异常。</p>
+<pre><code class="language-java">public static void fixedValue() {
+   // 创建Enhancer对象
+   Enhancer enhancer = new Enhancer();
+   // 设置被代理类型
+   enhancer.setSuperclass(TargetService.class);
+   enhancer.setCallback(new FixedValue() {
+      @Override
+      public Object loadObject() throws Exception {
+         //这里只是简单演示，这个FixedValue的匿名内部类可以注入外部依赖，此处可以编码复杂的业务逻辑，最终返回一个Object。
+         return &quot;返回修订 玄戈大人&quot;;
+      }
+   });
+   TargetService targetService = (TargetService) enhancer.create();
+   System.out.println(targetService.getName());
+}
+</code></pre>
+<h2 id="noop">NoOp</h2>
+<p>不做任何处理。。。  NoOp.INSTANCE</p>
+<pre><code class="language-java">public static void noOp() {
+   // 创建Enhancer对象
+   Enhancer enhancer = new Enhancer();
+   // 设置被代理类型
+   enhancer.setSuperclass(TargetService.class);
+   enhancer.setCallback(NoOp.INSTANCE);
+   TargetService targetService = (TargetService) enhancer.create();
+   System.out.println(targetService.getName());
+}
+</code></pre>
+<h2 id="lazyloader">LazyLoader</h2>
+<p>懒加载拦截器（懒加载(延迟加载)这个概念真实到处都有，应用场景很多嘛）。</p>
+<p>第一次拦截方法调用时，回调loadObject()方法，返回一个被代理类型的实例，然后调用这个懒加载实例对应的方法。</p>
+<p>后续所有的方法调用都不再拦截，只会使用第一次懒加载的实例，调用对应的方法。</p>
+<pre><code class="language-java">public static void lazyLoader() {
+   Enhancer enhancer = new Enhancer();
+   enhancer.setSuperclass(TargetService.class);
+   enhancer.setCallback(new LazyLoader() {
+      @Override
+      public Object loadObject() throws Exception {
+         System.out.println(&quot;loadObject ... ...&quot;);
+         return new TargetService();
+      }
+   });
+
+   TargetService targetService = (TargetService) enhancer.create();
+   targetService.say();
+   System.out.println(&quot;------------&quot;);
+   targetService.runToSay();
+}
+</code></pre>
+<p>当然这场景比较简单模板化，缺点就是只会拦截一次。Spring中@Autowire + @Lazy同样实现了懒加载的功能（同时还能处理被代理的循环依赖）。@Autowire + @Lazy使用的DynamicAdvisedInterceptor（上面提到过，是一个MethodInterceptor），相比会复杂一点，同时更加灵活，更多的扩展空间。</p>
+<p>@Autowire + @Lazy感兴趣的可以看下：<br>
+org.springframework.beans.factory.support.DefaultListableBeanFactory#resolveDependency</p>
+<p>org.springframework.context.annotation.ContextAnnotationAutowireCandidateResolver#getLazyResolutionProxyIfNecessary</p>
+<h2 id="dispatcher">Dispatcher</h2>
+<p>调度器，分发器。跟上面的LazyLoader很相似，都是被拦截后返回一个实例，然后执行实例的方法。</p>
+<p>区别是LazyLoader只会拦截一次、回调一次，后续的调用不在拦截，使用第一次的实例。</p>
+<p>Dispatcher是每次都会拦截，可能每次返回的实例都不一样，也可能都一样，这样就人为退化成了LazyLoader。</p>
+<pre><code class="language-java">public static void dispathcer() {
+   Enhancer enhancer = new Enhancer();
+   enhancer.setSuperclass(TargetService.class);
+   enhancer.setCallback(new Dispatcher() {
+      @Override
+      public Object loadObject() throws Exception {
+         System.out.println(&quot;loadObject ... ...&quot;);
+         return new TargetService();
+      }
+   });
+
+   TargetService targetService = (TargetService) enhancer.create();
+   targetService.say();
+   System.out.println(&quot;------------&quot;);
+   targetService.runToSay();
+}
+</code></pre>
+<h2 id="namingpolicy">NamingPolicy</h2>
+<p>命名策略，自己用用没事，框架的不要乱动，保不准框架会用动态类名去做一些逻辑判断。</p>
+<p>这里只是演示下getTag，其他不做过多演示，个人觉得了解下即可。</p>
+<pre><code class="language-java">public static void namingPolicy() {
+   Enhancer enhancer = new Enhancer();
+   enhancer.setSuperclass(TargetService.class);
+   enhancer.setCallback(NoOp.INSTANCE);
+   enhancer.setNamingPolicy(new DefaultNamingPolicy(){
+      //控制动态子类的命名规则
+      @Override
+      protected String getTag() {
+         return &quot;ByShengeCGLIB&quot;;
+      }
+   });
+
+   TargetService targetService = (TargetService) enhancer.create();
+   targetService.say();
+   System.out.println(&quot;------------&quot;);
+   targetService.runToSay();
+}
+</code></pre>
+<h2 id="callbackfilter">CallbackFilter</h2>
+<p>回调过滤，不同的方法应用不同的回调。</p>
+<p>setCallbacks() 、setCallbackFilter()同步使用。</p>
+<pre><code class="language-java">public static void callBackFilter() {
+   // 创建Enhancer对象
+   Enhancer enhancer = new Enhancer();
+   // 设置被代理类型
+   enhancer.setSuperclass(TargetService.class);
+
+   Callback[] callbacks = {
+         //换个lambda表达式的写法
+         (MethodInterceptor) (o, method, objects, methodProxy) -&gt; {
+            System.out.println(&quot;第一个拦截器，Cglib拦截方法：&quot; + method.getName());
+            return methodProxy.invokeSuper(o, objects);
+         },
+         //换个lambda表达式的写法
+         (MethodInterceptor) (o, method, objects, methodProxy) -&gt; {
+            System.out.println(&quot;第二个拦截器，Cglib拦截方法：&quot; + method.getName());
+            return methodProxy.invokeSuper(o, objects);
+         }
+   };
+   enhancer.setCallbacks(callbacks);
+   // 如果注入了多个 callbacks，没有CallbackFilter的话，会抛出异常
+   // java.lang.IllegalStateException: Multiple callback types possible but no filter specified
+   // 这也可以反向证明一个方法对应一个callback
+   enhancer.setCallbackFilter(new CallbackFilter() {
+      /**
+       * 回调过滤器，不同的method使用不同的回调
+       * @param method
+       * @return 返回值为callbacks数组下标
+       */
+      @Override
+      public int accept(Method method) {
+         return method.getName().equals(&quot;say&quot;) ? 0 : 1;
+      }
+   });
+
+   TargetService targetService = (TargetService) enhancer.create();
+   targetService.say();
+   System.out.println(&quot;------------&quot;);
+   targetService.runToSay();
+}
+</code></pre>
+<h2 id="callbackhelper">CallbackHelper</h2>
+<p>CallbackFilter的加强版，使用跟人性化。</p>
+<pre><code class="language-java">public static void callBackHelper() {
+   // 创建Enhancer对象
+   Enhancer enhancer = new Enhancer();
+   // 设置被代理类型
+   enhancer.setSuperclass(TargetService.class);
+
+   Callback callback1 = (MethodInterceptor) (o, method, objects, methodProxy) -&gt; {
+      System.out.println(&quot;第一个拦截器，Cglib拦截方法：&quot; + method.getName());
+      return methodProxy.invokeSuper(o, objects);
+   };
+   Callback callback2 = (MethodInterceptor) (o, method, objects, methodProxy) -&gt; {
+      System.out.println(&quot;第二个拦截器，Cglib拦截方法：&quot; + method.getName());
+      return methodProxy.invokeSuper(o, objects);
+   };
+
+   //CallbackHelper实例化时,内部会遍历TargetService所有方法，调用下面重写的逻辑，收集所有的可以应用的Callbacks
+   //并且CallbackHelper 实现了CallbackFilter.accept()方法，内部直接返回method对应的 Callback 下标。
+   //CallbackHelper 内部逻辑很简单，对CallbackFilter做了封装，我们就可以不用去扣那些个下标值了。
+   CallbackHelper callbackHelper = new CallbackHelper(TargetService.class, null) {
+      @Override
+      protected Object getCallback(Method method) {
+         return method.getName().equals(&quot;say&quot;) ? callback1 : callback2;
+      }
+   };
+
+   enhancer.setCallbacks(callbackHelper.getCallbacks());
+   enhancer.setCallbackFilter(callbackHelper);
+
+   TargetService targetService = (TargetService) enhancer.create();
+   targetService.say();
+   System.out.println(&quot;------------&quot;);
+   targetService.runToSay();
+}
+</code></pre>
+<h2 id="代理接口">代理接口</h2>
+<p>可以不需要基类，直接代理多个接口。</p>
+<p>也可以代理基类+多个接口的组合。</p>
+<pre><code class="language-java">public interface ITargetService {
+   void fly();
+}
+
+public static void interfaceProxy() {
+   // 创建Enhancer对象
+   Enhancer enhancer = new Enhancer();
+   // 设置被代理接口
+   enhancer.setInterfaces(new Class[]{ITargetService.class});
+   // 接口实现
+   ITargetService target = new ITargetService() {
+      @Override
+      public void fly() {
+         System.out.println(&quot;fly&quot;);
+      }
+   };
+   // 这里使用的MethodInterceptor
+   enhancer.setCallback(new MethodInterceptor() {
+      @Override
+      public Object intercept(Object o, Method method, Object[] objects, MethodProxy methodProxy) throws Throwable {
+         System.out.println(&quot;Cglib拦截方法：&quot; + method.getName());
+         return method.invoke(target, objects);
+      }
+   });
+   ITargetService targetService = (ITargetService) enhancer.create();
+   targetService.fly();
+}
+</code></pre>
+<h3 id="结束">结束</h3>
+<p>简单的了解了Enhancer的一些基础操作，对Cglib有了一点感性认知，后面我们深入的了解下内部的运作原理。</p>
 ]]></content>
     </entry>
     <entry>
-        <title type="html"><![CDATA[测试]]></title>
-        <id>https://shiyuesheng.github.io/post/ce-shi/</id>
-        <link href="https://shiyuesheng.github.io/post/ce-shi/">
+        <title type="html"><![CDATA[代理精进系列五：JDK动态代理原理]]></title>
+        <id>https://shiyuesheng.github.io/post/dai-li-jing-jin-xi-lie-wu-jdk-dong-tai-dai-li-yuan-li/</id>
+        <link href="https://shiyuesheng.github.io/post/dai-li-jing-jin-xi-lie-wu-jdk-dong-tai-dai-li-yuan-li/">
         </link>
-        <updated>2020-11-02T03:43:29.000Z</updated>
-        <content type="html"><![CDATA[<h3 id="北京">北京</h3>
+        <updated>2021-04-25T14:52:46.000Z</updated>
+        <content type="html"><![CDATA[<h1 id="jdk动态代理原理">JDK动态代理原理</h1>
+<blockquote>
+<p>简单的分析下JDK动态代理的底层原理，只摸脉络、不究细节。</p>
+<p>整体概括，方便回顾：<strong>Proxy.newProxyInstance()</strong></p>
+<p>1、查找或者创建代理类class</p>
+<ul>
+<li>缓存中查找是否有合适的代理类Class对象，有则返回。</li>
+<li>缓存中不存在，创建代理类Class
+<ul>
+<li>对ClassLoader、interfaces进行校验</li>
+<li>通过计数构造代理类名称</li>
+<li>JDK内置的代理类生成模版，生成字节码</li>
+<li>ClassLoader加载字节码</li>
+</ul>
+</li>
+</ul>
+<p>2、反射获取参数为InvocationHandler的构造函数</p>
+<p>3、反射实例化代理类</p>
+<p>简单分析Proxy类下几个重要的属性变量、方法：</p>
+</blockquote>
+<h3 id="实例变量protected-invocationhandler-h">实例变量：protected InvocationHandler h</h3>
+<p>这个没什么好说的，已经很熟悉了，动态生成的代理类实例在实例化时，会给这个字段赋值我们指定的方法调用处理器。</p>
+<h3 id="静态方法proxynewproxyinstance">静态方法：Proxy.newProxyInstance()</h3>
+<pre><code class="language-java">public static Object newProxyInstance(ClassLoader loader,
+                                          Class&lt;?&gt;[] interfaces,
+                                          InvocationHandler h)
+        throws IllegalArgumentException
+    {
+        Objects.requireNonNull(h);
+
+        //数组clone
+        final Class&lt;?&gt;[] intfs = interfaces.clone();
+        //权限校验 不做深究
+        final SecurityManager sm = System.getSecurityManager();
+        if (sm != null) {
+            checkProxyAccess(Reflection.getCallerClass(), loader, intfs);
+        }
+
+        /*
+         * 查找或者生成代理类class。这一步是核心逻辑，具体逻辑在ProxyClassFactory中实现
+         */
+        Class&lt;?&gt; cl = getProxyClass0(loader, intfs);
+
+        /*
+         * 用指定的调用处理程序调用其构造函数
+         */
+        try {
+            if (sm != null) {
+                checkNewProxyPermission(Reflection.getCallerClass(), cl);
+            }
+
+            final Constructor&lt;?&gt; cons = cl.getConstructor(constructorParams);
+            final InvocationHandler ih = h;
+            if (!Modifier.isPublic(cl.getModifiers())) {
+                AccessController.doPrivileged(new PrivilegedAction&lt;Void&gt;() {
+                    public Void run() {
+                        cons.setAccessible(true);
+                        return null;
+                    }
+                });
+            }
+            return cons.newInstance(new Object[]{h});
+        } catch (IllegalAccessException|InstantiationException e) {
+            throw new InternalError(e.toString(), e);
+        } catch (InvocationTargetException e) {
+            Throwable t = e.getCause();
+            if (t instanceof RuntimeException) {
+                throw (RuntimeException) t;
+            } else {
+                throw new InternalError(t.toString(), t);
+            }
+        } catch (NoSuchMethodException e) {
+            throw new InternalError(e.toString(), e);
+        }
+    }
+</code></pre>
+<p>这是使用JDK动态代理的入口，返回代理类。逻辑比较简单，生成代理类class，获取构造器、创建新的实例。最核心的生成代理类class不在此处。</p>
+<p>内部做了缓存优化，并不是每次调用都要编码、加载代理类class。缓存使用key-value映射进行存储，缓存的依据是 Class&lt;?&gt;[] interfaces，使用interfaces包装后的SubKey对象作为键，代理类class包装后的CacheValue为值（也可能是Factory）。</p>
+<p>所以interfaces数组接口的顺序尤为重要，不同顺序的interfaces数组生成的代理类class是不同的，缓存中的SubKey也是不同的</p>
+<h3 id="静态内部类工厂proxyclassfactory">静态内部类工厂：ProxyClassFactory</h3>
+<pre><code class="language-java">private static final class ProxyClassFactory
+    implements BiFunction&lt;ClassLoader, Class&lt;?&gt;[], Class&lt;?&gt;&gt;
+{
+    // 所有代理类名称的前缀
+    private static final String proxyClassNamePrefix = &quot;$Proxy&quot;;
+
+    // 用于生成下一个唯一代理类名称的数字
+    private static final AtomicLong nextUniqueNumber = new AtomicLong();
+
+    @Override
+    public Class&lt;?&gt; apply(ClassLoader loader, Class&lt;?&gt;[] interfaces) {
+
+        // 用来验证接口数组中是否存在重复的Map
+        Map&lt;Class&lt;?&gt;, Boolean&gt; interfaceSet = new IdentityHashMap&lt;&gt;(interfaces.length);
+        // 整个for循环就是用来验证接口数组的
+        for (Class&lt;?&gt; intf : interfaces) {
+            /*
+             * 验证类加载器是否将此接口的名称解析为相同的Class对象。
+             */
+            Class&lt;?&gt; interfaceClass = null;
+            try {
+                interfaceClass = Class.forName(intf.getName(), false, loader);
+            } catch (ClassNotFoundException e) {
+            }
+            if (interfaceClass != intf) {
+                throw new IllegalArgumentException(
+                    intf + &quot; is not visible from class loader&quot;);
+            }
+            /*
+             * 验证Class对象实际上代表一个接口。
+             */
+            if (!interfaceClass.isInterface()) {
+                throw new IllegalArgumentException(
+                    interfaceClass.getName() + &quot; is not an interface&quot;);
+            }
+            /*
+             * 验证此接口不是重复的。
+             */
+            if (interfaceSet.put(interfaceClass, Boolean.TRUE) != null) {
+                throw new IllegalArgumentException(
+                    &quot;repeated interface: &quot; + interfaceClass.getName());
+            }
+        }
+
+        String proxyPkg = null;     // package to define proxy class in
+        int accessFlags = Modifier.PUBLIC | Modifier.FINAL;
+
+        /*
+         * Record the package of a non-public proxy interface so that the
+         * proxy class will be defined in the same package.  Verify that
+         * all non-public proxy interfaces are in the same package.
+         */
+        //记录非公共代理接口的程序包，以便在同一程序包中定义代理类。验证所有非公共代理接口都在同一程序包中。
+        for (Class&lt;?&gt; intf : interfaces) {
+            int flags = intf.getModifiers();
+            if (!Modifier.isPublic(flags)) {
+                accessFlags = Modifier.FINAL;
+                String name = intf.getName();
+                int n = name.lastIndexOf('.');
+                String pkg = ((n == -1) ? &quot;&quot; : name.substring(0, n + 1));
+                if (proxyPkg == null) {
+                    proxyPkg = pkg;
+                } else if (!pkg.equals(proxyPkg)) {
+                    throw new IllegalArgumentException(
+                        &quot;non-public interfaces from different packages&quot;);
+                }
+            }
+        }
+
+        if (proxyPkg == null) {
+            // if no non-public proxy interfaces, use com.sun.proxy package
+            proxyPkg = ReflectUtil.PROXY_PACKAGE + &quot;.&quot;;
+        }
+
+        /*
+         * 选择要生成的代理类的名称
+         */
+        long num = nextUniqueNumber.getAndIncrement();
+        String proxyName = proxyPkg + proxyClassNamePrefix + num;
+
+        /*
+         * 生成指定的代理类 字节码
+         */
+        byte[] proxyClassFile = ProxyGenerator.generateProxyClass(
+            proxyName, interfaces, accessFlags);
+        try {
+            //加载器加载类
+            return defineClass0(loader, proxyName,
+                                proxyClassFile, 0, proxyClassFile.length);
+        } catch (ClassFormatError e) {
+            /*
+             * A ClassFormatError here means that (barring bugs in the
+             * proxy class generation code) there was some other
+             * invalid aspect of the arguments supplied to the proxy
+             * class creation (such as virtual machine limitations
+             * exceeded).
+             */
+            throw new IllegalArgumentException(e.toString());
+        }
+    }
+}
+</code></pre>
+<p>代理类工厂，真正干活的地方，用于生成，定义，加载，返回代理类，使用给定ClassLoader和接口数组。整体流程：</p>
+<ul>
+<li>对传入的接口数组，也就是代理类要实现的接口，进行安全校验。数组中的class是否重复、是否是一个接口，是否能被传入的ClassLoader加载、识别。</li>
+<li>组装要生成的代理类的类名，$Proxy后面拼接AtomicLong计数器，支持并发。</li>
+<li>生成代理类字节码，ProxyGenerator.generateProxyClass，内部就是一套生成代理类壳子的代码模板，根据要实现的接口最终生成代理类字节码。不做深究，不是asm、javassist。</li>
+<li>加载器加载代理类，返回代理类class对象。</li>
+</ul>
+<p>到此为止，上面的ProxyClassFactory已经能够完成JDK动态代理的核心任务了。下面所描述的都是缓存优化相关。可跳过。</p>
+<h3 id="静态内部类工厂keyfactory">静态内部类工厂：KeyFactory</h3>
+<pre><code class="language-java">private static final class KeyFactory
+    implements BiFunction&lt;ClassLoader, Class&lt;?&gt;[], Object&gt;
+{
+    @Override
+    public Object apply(ClassLoader classLoader, Class&lt;?&gt;[] interfaces) {
+        switch (interfaces.length) {
+            case 1: return new Key1(interfaces[0]); // the most frequent
+            case 2: return new Key2(interfaces[0], interfaces[1]);
+            case 0: return key0;
+            default: return new KeyX(interfaces);
+        }
+    }
+}
+</code></pre>
+<p>SubKey工厂，根据代理类要实现的interfaces生成SubKey对象。用来做缓存key，优化代理类的生成逻辑。</p>
+<p>内部细节上根据interfaces的数量大小做了更进一步的优化，可以跳过，无关大局。</p>
+<p>但要注意的是：</p>
+<ul>
+<li>interfaces数组接口的顺序尤为重要，不同顺序的interfaces数组生成的代理类class是不同的，缓存中的SubKey也是不同的。</li>
+<li>Key1、Key2、KeyX都是WeakReference类型的，如果没有强引用指向这些 Weak-Key？内部的referent对象，JVM进行GC时，会对内部的referent进行回收。也就是说当前的这些 Weak-Key？也就没有作用了，缓存也就失效了，当外部通过相同的interfaces获取代理类时，会重新编码，加载代理类class，然后再放入缓存中。</li>
+</ul>
+<h3 id="私有静态方法proxygetproxyclass0">私有静态方法：Proxy.getProxyClass0()</h3>
+<pre><code class="language-java">private static Class&lt;?&gt; getProxyClass0(ClassLoader loader,
+                                       Class&lt;?&gt;... interfaces) {
+    if (interfaces.length &gt; 65535) {
+        throw new IllegalArgumentException(&quot;interface limit exceeded&quot;);
+    }
+
+    /**
+     * 如果存在实现了给定接口、并被给定加载器定义的代理类，则将简单地返回缓存的副本
+     * 否则，它将通过ProxyClassFactory创建代理类
+     * proxyClassCache = new WeakCache&lt;&gt;(new KeyFactory(), new ProxyClassFactory());
+     * proxyClassCache 内置了KeyFactory、ProxyClassFactory
+     * proxyClassCache 内部不存在真正的代理类生成加载逻辑，见名知意，是用来做缓存的。
+     */
+    return proxyClassCache.get(loader, interfaces);
+}
+</code></pre>
+<p>没啥好说的，就是不直接走代理类生成逻辑，而是把生成代理类工厂注入进proxyClassCache中，中间做一层缓存拦截，缓存没有命中，才会真正的拿着loader、interfaces这俩参数去调用上面提到的 ProxyClassFactory.apply(ClassLoader loader, Class&lt;?&gt;[] interfaces) 工厂方法，真正的走一遍代理类编码、加载逻辑。</p>
+<h3 id="静态变量-proxyclasscache">静态变量 proxyClassCache：</h3>
+<p><code>private static final WeakCache&lt;ClassLoader, Class&lt;?&gt;[], Class&lt;?&gt;&gt; proxyClassCache = new WeakCache&lt;&gt;(new KeyFactory(), new ProxyClassFactory());</code></p>
+<p>Proxy的静态变量，基本上意味的全局唯一。内部注入了Proxy模块的 KeyFactory、ProxyClassFactory。</p>
+<ul>
+<li>KeyFactory：生成缓存用的SubKey对象，在WeakCache里面是二级缓存key。</li>
+<li>ProxyClassFactory：生成动态代理class对象。</li>
+</ul>
+<h3 id="weakcache-弱缓存">WeakCache 弱缓存</h3>
+<pre><code class="language-java">final class WeakCache&lt;K, P, V&gt; {
+    private final ReferenceQueue&lt;K&gt; refQueue
+        = new ReferenceQueue&lt;&gt;();
+    // the key type is Object for supporting null key
+    private final ConcurrentMap&lt;Object, ConcurrentMap&lt;Object, Supplier&lt;V&gt;&gt;&gt; map
+        = new ConcurrentHashMap&lt;&gt;();
+
+    //反向判断代理类是否存在
+    private final ConcurrentMap&lt;Supplier&lt;V&gt;, Boolean&gt; reverseMap
+        = new ConcurrentHashMap&lt;&gt;();
+    //Key工厂
+    private final BiFunction&lt;K, P, ?&gt; subKeyFactory;
+    //代理类工厂
+    private final BiFunction&lt;K, P, V&gt; valueFactory;
+}
+</code></pre>
+<p>(key, sub-key) -&gt; value高速缓存映射对。这个WeakCache是一个抽象的概念，能力有限，这里我们只在动态代理的环境下去进行分析。不过这个弱缓存是真的“弱”啊，人如其名，key、sub-key、value全是弱应用对象。（当然在这个抽象类里面并没有对sub-key进一步包装成弱引用对象，但是冲JDK动态代理的角度，我们知道sub-key是个什么底色，上面提到过，弱引用嘛）</p>
+<ul>
+<li>
+<p><strong>K</strong> - 对应的是加载代理类的ClassLoader</p>
+</li>
+<li>
+<p><strong>P</strong> - 对应的是代理类要实现的接口数组</p>
+</li>
+<li>
+<p><strong>V</strong> - 对应的是代理类class</p>
+</li>
+<li>
+<p><strong>ReferenceQueue<K> refQueue</strong> - 引用队列，主key内容被GC后，用以缓存清理</p>
+</li>
+<li>
+<p><strong>ConcurrentMap&lt;Object, ConcurrentMap&lt;Object, Supplier<V>&gt;&gt; map</strong> - 真正的缓存实体</p>
+<ul>
+<li>key：ClassLoader经过包装后的CacheKey，弱引用</li>
+<li>sub-key：Proxy.KeyFactory 将interfaces包装后的Key1、Key2、KeyX，弱引用</li>
+<li>value：生成的动态代理类Class经过包装后的CacheValue，弱引用</li>
+</ul>
+</li>
+<li>
+<p><strong>ConcurrentMap&lt;Supplier<V>, Boolean&gt; reverseMap</strong> - 已经生成的代理类class缓存，用来快速查找、验证。</p>
+</li>
+<li>
+<p><strong>BiFunction&lt;K, P, ?&gt; subKeyFactory</strong> - 生成缓存用的SubKey对象，在WeakCache里面是二级缓存key。</p>
+</li>
+<li>
+<p><strong>BiFunction&lt;K, P, V&gt; valueFactory</strong> - 生成动态代理class对象。</p>
+</li>
+</ul>
+<p>具体的代码逻辑就不跟着走了，太细节，直接画个图直观的说明一下：</p>
+<figure data-type="image" tabindex="1"><img src="https://tva1.sinaimg.cn/large/008eGmZEly1gpgyjdd0dmj30zz0af75a.jpg" alt="WeakCache-JDK动态代理角度分析" loading="lazy"></figure>
+<p>proxyClassCache.get(loader, interfaces) 流程简单梳理：</p>
+<p>1、将传入的loader包装成CacheKey，这是一个弱引用。</p>
+<p>2、通过CacheKey去获取缓存中一级键值对的value（ConcurrentMap&lt;Object, Supplier<V>&gt;&gt;），不存在就创建。拿到二级键值对。</p>
+<p>3、通过注入的subKeyFactory，根据interfaces生成sub-key。</p>
+<p>4、通过sub-key，获取缓存中二级键值对的value（Supplier<V>）</p>
+<ul>
+<li>存在就调用对应的Supplier.get()，获取代理类Class对象。</li>
+<li>不存在就封装一个Factory（这也是个Supplier），最终调用get()方法，内部会通过注入的<strong>valueFactory</strong>真正的编码、加载代理类，返回Class对象，将之包装成CacheValue（这也是个Supplier，同时是个弱引用），将之放入二级键值对。</li>
+</ul>
+<p>5、返回代理类Class对象。</p>
 ]]></content>
     </entry>
     <entry>
-        <title type="html"><![CDATA[《后浪》别酸了--抄录]]></title>
-        <id>https://shiyuesheng.github.io/post/lesslesshou-lang-greatergreater-bie-suan-liao-chao-lu/</id>
-        <link href="https://shiyuesheng.github.io/post/lesslesshou-lang-greatergreater-bie-suan-liao-chao-lu/">
+        <title type="html"><![CDATA[代理精进系列四：JDK动态代理]]></title>
+        <id>https://shiyuesheng.github.io/post/dai-li-jing-jin-xi-lie-si-jdk-dong-tai-dai-li/</id>
+        <link href="https://shiyuesheng.github.io/post/dai-li-jing-jin-xi-lie-si-jdk-dong-tai-dai-li/">
         </link>
-        <updated>2020-06-14T13:04:21.000Z</updated>
-        <content type="html"><![CDATA[<p>最近《后浪》视频出来这几天，一直都有不少争议。</p>
-<p>视频里所展现出的异国出游、自由探索等状态，戳到了很多人的痛处，有人酸“这是给富人阶层拍的片子”，还有人为“视频是否暴露出阶级差异”展开各种争论。</p>
-<p>网上产生种种争议声音的原因，概括一下，主要还是源自一些人产生的三大错觉。</p>
-<h4 id="1-世界三大错觉">1、世界三大错觉</h4>
-<p>普通人的错觉之一，是以为有钱人、领导们的钱都是不劳而获，每天轻松躺着挣钱。仿佛他们说句话、挥挥手，几百几千万就轻松到账。</p>
-<p>典型如带货主播李佳琦薇娅，曾经有很多人眼红他们说话就能挣钱，觉得这钱太好挣了。</p>
-<p>但实际上，他们付出的努力与辛苦，是很多人都做不到的。很多真正做过直播的朋友，都曾感慨过直播真的太难，体力与毅力完全不是一般人所能承受。</p>
-<p>而那些被人们所羡慕的上市公司CEO或高管，每天更是忙到脚不离地，晚上需要各种开会，一开就要几个小时，大部分的时间都要熬夜。</p>
-<p>虽然高管基本是每个月都出国出差、经常吃米其林餐厅，但生活内容都是见客户、商务谈判，基本没有太多时间去享受。</p>
-<p>就像朱一旦的描述，真的是非常枯燥。</p>
-<p>如果把你放在他们的位置上，你也未必喜欢这样的生活，更不会羡慕。</p>
-<p>你只会感觉比底层社畜的时候更高压，更劳累，很难承受这样的工作压力和工作节奏。</p>
-<p>但是，人们永远只能看到成功者的光鲜，却自动忽略他们的辛苦。</p>
-<p>要记住这个道理：</p>
-<p>操多大的心，拼多大的命，赚多大的钱；</p>
-<p>赚多大的钱，实现多大的野心，享受多高的生活质量。</p>
-<p>都是因果相关，完全不存在什么捷径，更不存在轻松挣钱的方式。</p>
-<p>如果非要追求活少钱多，建议直接做梦。</p>
-<p>人们的错觉之二，是以为自己每天996还挣不到钱，都是因为黑心资本家剥削克扣。</p>
-<p>不排除有这样的可能，但并非所有的资本家都黑心，都是在剥削你。</p>
-<p>很多奋斗的人说自己现在过得太苦，可问题是，除了富N代，那些白手起家的人，谁刚入社会不是苦过来的？</p>
-<p>吃苦不算什么，重要的是如何将这种苦更快的度过去，而不是在苦难中一味散发戾气。</p>
-<p>抱怨解决不了任何现实问题。</p>
-<p>要知道，你的收入，永远是跟能力与勤奋成正比的。</p>
-<p>首先，99%的职场人，扪心自问，都未必做到了勤奋这一点。</p>
-<p>其次，如果你觉得自己真的很勤奋，经历各种996却还是收入很低，那就需要警惕，你的努力是否有效率，是否还是劣质的努力，或者，努力的行业是否真的适合自己。</p>
-<p>再进一步，如果方向没问题的话，是不是自己的职场能力还比较薄弱。</p>
-<p>要一步一步去反思自己，去改变。</p>
-<p>当然，生活中难免会遇到很多不公平的事情，那就尽最大所能，先改变自己目前能够改变的。</p>
-<p>人们的错觉之三，是认为自己从一开始就出身在普通或贫困家庭，无论怎么努力，也比不上那些富二代。</p>
-<p>觉得在阶级固化之下，在巨大的成就背后，身世更重要，个人的奋斗微不足道，就开始质疑奋斗的意义，于是开始犬儒、开始懈怠。</p>
-<p>这样的人，其实从一开始的比较目标就设错了。</p>
-<p>你成不成功，跟时代没有必然关系。</p>
-<p>而且无论在哪个时代，排除个别极端的例子，个人想实现阶层跃迁都非常难。</p>
-<p>就算是把你放在下海创业机会多的八九十年代，互联网初创公司蓬勃兴起的千禧年代。</p>
-<p>要承认的是，该是炮灰一样是炮灰，你大概率成不了潘石屹，也做不了张一鸣。</p>
-<p>然而，当不了马云们，奋斗就没意义了么？这一辈子就人间失格了么？</p>
-<p>当然不是。</p>
-<p>我们的奋斗，是为了更好的生活，而这个“更好”的比较，是基于自己。</p>
-<p>不是非得在一线城市扎根、或能将奢侈品当作日用品的生活，才能叫做“更好的生活”。</p>
-<p>实际上，基于每个人的初始情况不同，从农村到县城、从县城到城市，从三四线城市到一线，每一个改变，都是提升，也是个人奋斗的成果。</p>
-<p>至于提升的幅度与空间，则跟你的努力程度息息相关。</p>
-<p>在现实中，也有很多如你我一样的普通人，通过奋斗，如今都过上当初想要的生活的例子。</p>
-<p>他们“实现更好的生活”有各种原因，但最关键的因素，无一例外，还是比一般人多出几倍的勤奋。</p>
-<p>同样，我也见过一些富二代，一毕业后就选择待在国企，拿着微薄的薪水，因为没有上进心，能力不足，在国企辞职以后，在市场上找工作也一样费力，完全不存在什么富二代光环。</p>
-<p>所以，那些拿家世作为挡箭牌，通过一句“阶级固化”粉饰自己不够勤奋的现实，完全是一部分人的自我欺骗而已。</p>
-<h4 id="2-割韭菜的意义滥用">2、“割韭菜”的意义滥用</h4>
-<p>这几年因为李笑来、罗永浩等人身体力行的科普，成功让大众知道了韭菜这个词。</p>
-<p>“韭菜”一词这几年也快速实现下沉，让县城农村的人都知道是什么意思。</p>
-<p>同时，这也给很多人一种错觉，仿佛任何东西只要跟钱沾上了边，那就是在收割自己，就是在割韭菜，仿佛“全世界都在害他”一样。</p>
-<p>这就要回到割韭菜的定义，到底什么是割韭菜。</p>
-<p>具体指的是，卖方提供的东西，是假的、完全不足以匹配价格的，欺骗了买方，这才叫割韭菜。</p>
-<p>其余情况，只要对方付出了服务与商品，并得到双方都默认同意的回报，这些都属于正常的交易关系，你情我愿而已。</p>
-<p>不要看到旅游博主、美食博主很能挣钱，就觉得他一定是在割韭菜，实际上，像李子柒这样的博主，背后付出的辛苦程度远非一般人能承受了的：</p>
-<p>重复的枯燥拍摄、创作的孤独、远比一般人要少太多的娱乐休闲......可以说，他们通过牺牲自己，才制造出了精致的视频，为看客们造梦。</p>
-<p>多大的付出，就有多大的回报，真没什么好酸的。</p>
-<p>一物换一物，这是商业社会的本质。</p>
-<p>如果实在看不过去，那就去修炼自己，牺牲自己，把自己变成镰刀，成为卖方去服务（收割）别人，多向别人提供服务。</p>
-<p>而不是每天纯粹当消费者，享受他人的劳动成果，完了还一脸受害者的样子。</p>
-<p>最后想说一点，我写文的意思，不是要鼓励所有人都要为了工作放弃娱乐，也不是鼓吹所有人都非要成为事业强人。</p>
-<p>那些放低人生欲望、平平淡淡在小城市过好一生的选择，也同样值得尊重。</p>
-<p>毕竟，每种选择都有代价，也都有优势，如何选择只是因人而异。</p>
-<p>但最重要的是，不要老是想着好处全占、代价全免。</p>
-<p>一边又想享受普通人“活在当下”的生活，一边又想着做出一番事业实现阶级跃升，最后野心实现不了，就开始怪阶级固化的大环境。</p>
-<p>这样的人，非贪即坏，最后什么也得不到。</p>
-<p>所以，对于一部分人来说，与其酸、质疑《后浪》，不如把这个时间与精力花在怎么做好手头工作、提升自己上。</p>
-<p>务实一点吧，“后浪”们！</p>
+        <updated>2021-04-25T14:51:49.000Z</updated>
+        <content type="html"><![CDATA[<h1 id="jdk动态代理">JDK动态代理</h1>
+<blockquote>
+<p>JDK动态代理是面向接口的，可以在运行时动态的生成一个实现了指定接口列表的代理类，并且可以指定我们自己定制的方法调用处理器，来拦截、增强、扩展被代理类的功能。</p>
+</blockquote>
+<h4 id="jdk动态代理结构图">JDK动态代理结构图</h4>
+<figure data-type="image" tabindex="1"><img src="https://tva1.sinaimg.cn/large/008eGmZEly1gpfydc8fpdj314m0fj401.jpg" alt="JDK动态代理" loading="lazy"></figure>
+<p>对比之前的静态代理，不用在硬编码代理类了，而是通过JDK动态代理规范，按照模板动态生成一个仅仅是实现了目标接口方法语义的空壳，这个空壳仅有的依赖就是InvocationHandler方法调用处理器。而我们需要做的就是编写各种InvocationHandler，实现各种各样的代码增强逻辑（日志、统计、授权），然后按照我们自己的意愿将之应用（代理）目标类上面。</p>
+<p>这是什么？这是框架对方法调用这一个过程做了进一步的抽象，将之更广泛的应用到不同的代理场景中。本来需要我们硬编码的代理类现在不用我们自己写了，只需要将关注点聚焦到InvocationHandler就可以了，写好的InvocationHandler可以随意套用在任何代理场景中，动态生成的嘛，即插即用，随时更换，这好吗？这非常好！</p>
+<p>之前静态代理碰到的工作量、测试问题迎刃而解。吐槽完毕，进入正题。</p>
+<p>JDK动态代理模块有两个核心的类、接口：</p>
+<h2 id="invocationhandler-proxy">InvocationHandler &amp; Proxy</h2>
+<h3 id="javalangreflectinvocationhandler">java.lang.reflect.InvocationHandler</h3>
+<ul>
+<li>InvocationHandler 是方法调用处理器，是一个接口。</li>
+<li>它的实例由我们自己定制实现。在invoke方法内部可以写入我们需要的增强逻辑。它的实例也可以按照我们的意愿依赖一些外部类，尤其是代理的目标类</li>
+<li>它的实例被代理类实例所依赖。每个代理类实例都有一个关联的调用处理程序实例。</li>
+<li>在代理类实例上调用方法时，该方法调用将被编码并分派到其调用处理程序的invoke方法。（这个描述一会看下编译后的代理类class反编译文件后瞬间就能明白）</li>
+<li>唯一方法描述，<code>Object invoke(Object proxy, Method method, Object[] args)</code>
+<ul>
+<li><strong>proxy:Object</strong> - 代理类实例，InvocationHandler所在的代理类实例。</li>
+<li><strong>method:Method</strong> - 代理类实例上调用的接口方法所对应的Method实例。</li>
+<li><strong>args:Object[]</strong> - 包含在代理实例的方法调用中传递的参数值的对象数组；如果接口方法不带参数，则为null 。</li>
+</ul>
+</li>
+</ul>
+<h3 id="javalangreflectproxy">java.lang.reflect.Proxy</h3>
+<ul>
+<li>Proxy提供了用于创建动态代理类和实例的静态方法，它还是由这些方法创建的所有动态代理类的父类。</li>
+<li><code>Class&lt;?&gt; getProxyClass(ClassLoader loader, Class&lt;?&gt;... interfaces)</code> 该方法生成动态代理类class</li>
+<li><code>Object newProxyInstance(ClassLoader loader,Class&lt;?&gt;[] interfaces, InvocationHandler h)</code>该方法生成动态代理类实例
+<ul>
+<li><strong>loader:ClassLoader</strong> - 定义代理类的类加载器</li>
+<li><strong>interfaces:Class&lt;?&gt;[]</strong> - 代理类要实现的接口列表</li>
+<li><strong>h:InvocationHandler</strong> - 指定方法调用分派到的调用处理程序</li>
+</ul>
+</li>
+</ul>
+<h3 id="proxy动态生成的代理类">$Proxy（动态生成的代理类）</h3>
+<ul>
+<li>代理类扩展继承了java.lang.reflect.Proxy</li>
+<li>代理类完全按照顺序实现在其创建时指定的接口。</li>
+</ul>
+<p>上代码直观的感受一下</p>
+<h2 id="简单例子">简单例子</h2>
+<pre><code class="language-java">//接口
+public interface IServiceA {
+    void say();
+    void run();
+}
+//具体的目标类，被代理类
+public class ServiceA implements IServiceA {
+    @Override
+    public void say() {System.out.println(&quot;ServiceA say&quot;);}
+    @Override
+    public void run() { System.out.println(&quot;ServiceA run&quot;);}
+}
+//调用处理程序 在JDK动态代理环境，一般指的就是方法调用处理
+public class CostTimeInvocationHandler implements InvocationHandler {
+    private Object target;
+    public CostTimeInvocationHandler(Object target) {
+        this.target = target;
+    }
+    @Override
+    public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
+        //增强逻辑
+        long startTime = System.currentTimeMillis();
+        //通过反射调用被代理的目标类的真实方法
+        Object result = method.invoke(this.target, args);
+        //增强逻辑
+        long endTime = System.currentTimeMillis();
+        System.out.println(this.target.getClass() + &quot; 方法 &quot; + method.getName() + &quot; 耗时 &quot; + (endTime - startTime));
+        return result;
+    }
+}
+
+
+public class ProxyTest03 {
+    public static void main(String[] args) {
+        System.getProperties().put(&quot;sun.misc.ProxyGenerator.saveGeneratedFiles&quot;, &quot;true&quot;);
+        ServiceA serviceA = new ServiceA();
+        CostTimeInvocationHandler handler = new CostTimeInvocationHandler(serviceA);
+        IServiceA proxy = (IServiceA) Proxy.newProxyInstance(
+                serviceA.getClass().getClassLoader(),
+                serviceA.getClass().getInterfaces(),
+                handler);
+        proxy.say();
+        proxy.run();
+    }
+}
+</code></pre>
+<h2 id="代理类解析">代理类解析</h2>
+<p>运行JDK动态代理之前，加入下面代码，可以在com.sun.proxy 包下输出代理类的class文件</p>
+<p>System.getProperties().put(&quot;sun.misc.ProxyGenerator.saveGeneratedFiles&quot;, &quot;true&quot;);</p>
+<pre><code class="language-java">public final class $Proxy0 extends Proxy implements IServiceA {
+    private static Method m1;
+    private static Method m4;
+    private static Method m2;
+    private static Method m3;
+    private static Method m0;
+
+    public $Proxy0(InvocationHandler var1) throws  {
+        super(var1);
+    }
+
+    public final int hashCode() throws  {
+        try {
+            return (Integer)super.h.invoke(this, m0, (Object[])null);
+        } catch (RuntimeException | Error var2) {
+            throw var2;
+        } catch (Throwable var3) {
+            throw new UndeclaredThrowableException(var3);
+        }
+    }
+
+    public final boolean equals(Object var1) throws  {
+        try {
+            return (Boolean)super.h.invoke(this, m1, new Object[]{var1});
+        } catch (RuntimeException | Error var3) {
+            throw var3;
+        } catch (Throwable var4) {
+            throw new UndeclaredThrowableException(var4);
+        }
+    }
+
+    public final String toString() throws  {
+        try {
+            return (String)super.h.invoke(this, m2, (Object[])null);
+        } catch (RuntimeException | Error var2) {
+            throw var2;
+        } catch (Throwable var3) {
+            throw new UndeclaredThrowableException(var3);
+        }
+    }
+
+    public final void run() throws  {
+        try {
+            super.h.invoke(this, m4, (Object[])null);
+        } catch (RuntimeException | Error var2) {
+            throw var2;
+        } catch (Throwable var3) {
+            throw new UndeclaredThrowableException(var3);
+        }
+    }
+
+    public final void say() throws  {
+        try {
+            super.h.invoke(this, m3, (Object[])null);
+        } catch (RuntimeException | Error var2) {
+            throw var2;
+        } catch (Throwable var3) {
+            throw new UndeclaredThrowableException(var3);
+        }
+    }
+
+    static {
+        try {
+            m0 = Class.forName(&quot;java.lang.Object&quot;).getMethod(&quot;hashCode&quot;);
+            m1 = Class.forName(&quot;java.lang.Object&quot;).getMethod(&quot;equals&quot;, Class.forName(&quot;java.lang.Object&quot;));
+            m2 = Class.forName(&quot;java.lang.Object&quot;).getMethod(&quot;toString&quot;);
+            m3 = Class.forName(&quot;test.proxy.proxy03.IServiceA&quot;).getMethod(&quot;say&quot;);
+            m4 = Class.forName(&quot;test.proxy.proxy03.IServiceA&quot;).getMethod(&quot;run&quot;);
+        } catch (NoSuchMethodException var2) {
+            throw new NoSuchMethodError(var2.getMessage());
+        } catch (ClassNotFoundException var3) {
+            throw new NoClassDefFoundError(var3.getMessage());
+        }
+    }
+
+}
+</code></pre>
+<p>代码很简单，看起来是不是一个空壳子？我们简单的分析下这个代理类：</p>
+<ul>
+<li>
+<p>public final class $Proxy0 extends Proxy implements IServiceA</p>
+<ul>
+<li>final修饰的</li>
+<li>类名$Proxy0</li>
+<li>继承父类Proxy</li>
+<li>参数类型为InvocationHandler的构造参数，实例h被赋值到父类Proxy了</li>
+<li>实现接口IServiceA，也就这个是我们干预的，上面的都是JDK动态代理内部实现的</li>
+</ul>
+</li>
+<li>
+<p>Method</p>
+<p>Method m0 = Class.forName(&quot;java.lang.Object&quot;).getMethod(&quot;hashCode&quot;);<br>
+Method m1 = Class.forName(&quot;java.lang.Object&quot;).getMethod(&quot;equals&quot;, Class.forName(&quot;java.lang.Object&quot;));<br>
+Method m2 = Class.forName(&quot;java.lang.Object&quot;).getMethod(&quot;toString&quot;);<br>
+Method m3 = Class.forName(&quot;test.proxy.proxy03.IServiceA&quot;).getMethod(&quot;say&quot;);<br>
+Method m4 = Class.forName(&quot;test.proxy.proxy03.IServiceA&quot;).getMethod(&quot;run&quot;);</p>
+<p>m0、m1、m2也都是程序内置的，m3、m4是我们干预的。</p>
+</li>
+<li>
+<p>方法调用</p>
+<pre><code class="language-java">public final void run() throws  {
+    try {
+        super.h.invoke(this, m4, (Object[])null);
+    } catch (RuntimeException | Error var2) {
+        throw var2;
+    } catch (Throwable var3) {
+        throw new UndeclaredThrowableException(var3);
+    }
+}
+</code></pre>
+<p>直接调用了InvocationHandler.invoke方法，传入了当前代理类实例、当前的Method、方法参数。我个人理解，这三者的组合就是方法调用过程的抽象。</p>
+<p>后续的逻辑就是我们自己编写增强代码了，可以在反射调用目标方法之前、之后、环绕的植入我们自己的逻辑，当然我们也可以控制最终不进行目标方法的调用，全凭我们的意愿。</p>
+<h3 id="我自己碰到的问题">我自己碰到的问题</h3>
+<p>InvocationHandler 中我们一般都有目标实例的引用，如果不写对应的属性变量呢？会出现问题吗？</p>
+<p>当然不会，JDK动态代理是面向接口的，invoke方法里面我们想写什么都行。</p>
+<p>当然了，如果不引用目标对象，也就失去代理的意义了。</p>
+</li>
+</ul>
+<h2 id="jdk动态代理就没有问题了吗">JDK动态代理就没有问题了吗？</h2>
+<p>对照上面的例子，如果我们有多个独立的、互不想干的InvocationHandler，但是又想进行任意的组合，甚至细粒度到不同的方法使用不同的组合增强逻辑，那该怎么做呢？</p>
+<p>AOP切面编程，Spring AOP 将再进一步释放我们的双手，给我们省出更多的划水摸鱼时间。</p>
 ]]></content>
     </entry>
     <entry>
-        <title type="html"><![CDATA[《后浪》刺激了谁的神经？--抄录]]></title>
-        <id>https://shiyuesheng.github.io/post/lesslesshou-lang-greatergreater-ci-ji-liao-shui-de-shen-jing/</id>
-        <link href="https://shiyuesheng.github.io/post/lesslesshou-lang-greatergreater-ci-ji-liao-shui-de-shen-jing/">
+        <title type="html"><![CDATA[代理精进系列三：静态代理]]></title>
+        <id>https://shiyuesheng.github.io/post/dai-li-jing-jin-xi-lie-san-jing-tai-dai-li/</id>
+        <link href="https://shiyuesheng.github.io/post/dai-li-jing-jin-xi-lie-san-jing-tai-dai-li/">
         </link>
-        <updated>2020-06-14T13:02:19.000Z</updated>
-        <content type="html"><![CDATA[<p>五四前夕， 后浪登入央视黄金档，引起众多人关注。随后不久，B站也上线了，迅速占据了热搜榜。电视网络的全贯通，加之社交媒体的发酵，传播力和影响力都达到了巅峰。<br>
-我的朋友圈人很少，即使发生重大新闻事件，也平静如水，少有人讨论。可是这次，连续四五条转发，还配上了自己的感悟。<br>
-我应该是后浪的第一批观众了，那时候看得热血沸腾，完全被情绪给代入了，搭配着不断增加的弹幕，看了一遍又一遍。<br>
-下面的评论，在我的眼皮底下，从几百条涨到三千多条，网友基本是正面的态度，感叹国家进步和受到鼓励的居多。<br>
-不过，让我惊讶的是，到了五四当天，全网风向大变，正面评论早已淹没在批判声中。对比了评论雷同的内容和发布的时段，发现知乎起到了重要作用。<br>
-高赞者无不挑刺鄙视，说这只照顾了少数的衣食无忧之人，大多数年轻人在底层垂死挣扎的现状，却没有看到。也有人说，后浪是给“前浪”看的，有阿谀奉承之嫌。甚至有说，这是发令枪，以便继续剥削。这些质疑，戳到了年轻人的痛点，产生了内心的共鸣。<br>
-在碎片化的网络时代，思考成为了最稀缺的产品。人们喝腻了白鸡汤，嫌弃鄙夷，觉得智商被侮辱了；于是有人在白鸡汤中，放了些调料，变成了黑鸡汤，于是觉得天下美味，到处炫耀思想高人一等。<br>
-看看那些知乎获得高赞的人吧，被专业领域的回答者、高学历人群和公众号写手垄断了，他们心思缜密，可以侃侃而谈，他们很明白，你们这些底层想要什么，既然给不了正面前进的支撑，就给你宣泄情感的出口。<br>
-呵呵，一来一回，又回到了培养韭菜割韭菜的老套路罢了。他们口口声声说，后浪只照顾了城市小资甚至是特权阶级，但反过来要问，你们这些知乎人，又能代表底层阶级吗？<br>
-腹黑一点说，这些人早已挣脱了底层，正在赶往上层的路上，为了加速往前冲，需要借助底层的力量，有时发现困难重重，就认为上层人在阻碍他，前方破口大骂，后方惺惺作态，制造严重的对立。<br>
-说白了，这场由后浪引起的舆论风波，是一场未来的准上层，带动不明真相的底层，来打击传统上层的斗争罢了。底层收获了精神的安慰，准上层收获了上升的曙光，B站也获得了流量，谁赢谁输自己比较。</p>
+        <updated>2021-04-25T14:51:04.000Z</updated>
+        <content type="html"><![CDATA[<h1 id="静态代理">静态代理</h1>
+<h2 id="为什么需要代理">为什么需要代理</h2>
+<p>来一个简单的案例说明一下</p>
+<pre><code class="language-java">//接口
+public interface IService {
+    void say();
+    void run();
+}
+//实现类ServiceA
+public class ServiceA implements IService {
+    @Override
+    public void say() {System.out.println(&quot;ServiceA say&quot;);}
+    @Override
+    public void run() {System.out.println(&quot;ServiceA run&quot;);}
+}
+//实现类ServiceB
+public class ServiceB implements IService {
+    @Override
+    public void say() {System.out.println(&quot;ServiceB say&quot;);}
+
+    @Override
+    public void run() {System.out.println(&quot;ServiceB run&quot;);}
+}
+</code></pre>
+<h4 id="第一波需求">第一波需求</h4>
+<p>此时领导在基础业务功能上提一个需求，需要记录ServiceA所有方法的调用耗时。</p>
+<p>怎么做呢，最简单粗暴的办法就是在ServiceA每个方法的开头嵌入耗时统计的逻辑。</p>
+<h4 id="第二波需求">第二波需求</h4>
+<p>领导不满意目前的统计打印，希望将耗时统计结果发送到监控系统，用以做监控报警。</p>
+<p>那好吧，在之前的代码基础上，在每个方法内部继续嵌入耗时统计的上报发送逻辑。</p>
+<h4 id="第三波需求">第三波需求</h4>
+<p>把上面的需求改动应用到ServiceB上。</p>
+<p>我艹！！</p>
+<ul>
+<li>
+<p>代码示例仅仅是2个方法，如果有20个方法呢？</p>
+</li>
+<li>
+<p>所有改动的方法之后是不是都需要测试一遍呢？</p>
+</li>
+<li>
+<p>再进一步，如果示例的ServiceA、ServiceB是在第三方包中，不能修改，难道说还要把第三方包的类复制出来，改造覆盖吗？</p>
+</li>
+</ul>
+<p>不用这么麻烦，用之前学习过的代理模式来解决这个问题，在不修改目标业务代码的前提下，持有目标实例，在调用方、目标类之间做一个中介，保护、增强、解耦目标业务逻辑。</p>
+<h2 id="静态代理-2">静态代理</h2>
+<pre><code class="language-java">//代理类
+public class ServiceProxy implements IService {
+    private IService service;
+    public ServiceProxy(IService service) {
+        this.service = service;
+    }
+    @Override
+    public void say() {
+        long startTime = System.currentTimeMillis();
+        this.service.say();
+        long endTime = System.currentTimeMillis();
+        //模拟上报逻辑
+        System.out.println(&quot;say方法耗时：&quot; + (endTime - startTime));
+    }
+    @Override
+    public void run() {
+        long startTime = System.currentTimeMillis();
+        this.service.run();
+        long endTime = System.currentTimeMillis();
+        //模拟上报逻辑
+        System.out.println(&quot;run方法耗时：&quot; + (endTime - startTime));
+    }
+}
+
+//测试代码
+public class ProxyTest02 {
+    public static void main(String[] args) {
+        ServiceProxy serviceA = new ServiceProxy(new ServiceA());
+        serviceA.say();
+        serviceA.run();
+        System.out.println(&quot;--------------&quot;);
+        ServiceProxy serviceB = new ServiceProxy(new ServiceB());
+        serviceB.say();
+        serviceB.run();
+    }
+}
+
+</code></pre>
+<p>代码很简单，就是代理模式的复刻，不再多做解释。</p>
+<h2 id="不足之处">不足之处</h2>
+<p>领导要求在其他的接口也应用以上的逻辑，例如 IUserService、ILoginService等等，那是不是也要为这些接口编码对应的代理类呢？这个代码量、测试量可不少。有没有办法把代理逻辑做进一步抽象呢？我们只需要关注公共的增强逻辑？</p>
+<p>有，动态代理。</p>
 ]]></content>
     </entry>
     <entry>
-        <title type="html"><![CDATA[《后浪》刺激了谁的自尊？--抄录]]></title>
-        <id>https://shiyuesheng.github.io/post/lesslesshou-lang-greatergreater-ci-ji-liao-shui-de-zi-zun/</id>
-        <link href="https://shiyuesheng.github.io/post/lesslesshou-lang-greatergreater-ci-ji-liao-shui-de-zi-zun/">
+        <title type="html"><![CDATA[代理精进系列二：代理模式]]></title>
+        <id>https://shiyuesheng.github.io/post/dai-li-jing-jin-xi-lie-er-dai-li-mo-shi/</id>
+        <link href="https://shiyuesheng.github.io/post/dai-li-jing-jin-xi-lie-er-dai-li-mo-shi/">
         </link>
-        <updated>2020-06-14T12:57:13.000Z</updated>
-        <content type="html"><![CDATA[<p>5月3日（五四青年节前夕），B站推出了一段名为《后浪》的演讲视频。国家一级演员“老戏骨”何冰作为片中的主讲者，以充满力量的言语张力，向年轻人表达了自己作为“前浪”对“后浪”的羡慕、憧憬和希翼。如此鸡汤的视频，刚一播出，就获得了网友们的纷纷转载。</p>
-<p>不过，凡事都有两面，《后浪》上千万的播放量背后，有赞誉，也招来了许多的恶评。而作为片中的演讲者何冰，也没能逃过一劫，同样被推到了风口浪尖。一时间，各种谩骂、讽刺话语铺天盖地袭来，何冰微博几乎被攻陷。最后，何冰因为这次演讲，被6000+条恶评推上了热搜。</p>
-<p>这也足于让人看到了什么是人言可畏。</p>
-<p>何冰为何被骂“晚节不保”？《后浪》到底刺痛了谁的自尊？</p>
-<p>客观上说，《后浪》的视频演讲是富有激情和感染力的。短片在B站首播不久，其浏览量就高达1783万，可见其内容的影响力。</p>
-<p>但为何明明是一个正能量的励志演讲（短片），收到的却是数千上万条的恶语批判呢？</p>
-<p>对此，有人直言不讳地指出：《后浪》短片是拍给富人看的，镜头里的年轻人，并不代表真实世界里的所有年轻人。</p>
-<p>“你见过谁家孩子都能拥有如此优越的生活条件，拿着上万、几十万的现代高科技设备去记录生活，无所顾虑到处去旅行，看世界……”</p>
-<p>有网友答复说：“我从未见过VR眼镜，也从未坐过飞机，更别说出国旅行，购买几万、几十万的高科技摄影设备了……”</p>
-<p>的确，这正如2019年中泰证券研究所所长李迅雷总结所言，我们的实际情况是：中国还有10亿人没坐过飞机，至少有一半以上的家庭迄今没有用上抽水马桶。</p>
-<p>而这些仅仅是小范围中的冰山一角而已。</p>
-<p>这世界，80%的资源掌握在20%的人手中，这世界，富人只占了极少部分。现在的大多数的年轻人，更多的是要面对无钱买房的压力，夜夜加班的压力，不敢结婚的压力……</p>
-<p>当一个人连基本的生存问题都尚未解决时，还能拿什么来谈理想？</p>
-<p>正如有网友反问所言：“你见过大凉山的那些可怜的孩子吗？你以为想“浪”就能“浪”吗？”</p>
-<p>“《后浪》视频短片跟朋友圈里的那些光鲜亮丽的美景、美照差不多，让人倍感羡慕。但那毕竟是朋友圈，跟生活没有多大关系。”</p>
-<p>所以，抱歉，这碗心灵鸡汤真的咽不下去！</p>
-<p>第一，站错立场，说话方式不对</p>
-<p>首先，在中国传统的礼仪文化中，素有尊师重道的传统美德。首先是因为尊重老人是基本的礼仪，其次是因为长辈是年轻人的“导师”，其人生的阅历和生活经验都比年轻人要丰富，常言道“不听老人言，吃亏在眼前”，说的不过如此。</p>
-<p>不过，都说“面子是别人给的”，作为长者，虽然享有这样的礼仪待遇，但这并代表着他能够随心所欲。</p>
-<p>演讲，作为一种公开的，面对大众的宣传讲话，却全程都以长者的身份来说理，这容易给人一种凌驾于普通大众之上的感觉。视频中，主讲者何冰以“前浪”先锋的视角来阐述对年轻人的看法，给人的感觉便是如此，这会让一些人感到不适。</p>
-<p>如视频中开头所言：“那些口口声声，一代不如一代的人，应该看着你们，像我一样……”</p>
-<p>开头就以老前辈的身份娓娓道来，给人一种暗喻：“嘿，我比你年长，比你更明白人世间……年轻人应该好好听着。”</p>
-<p>现如今，随着时代的发展，思想的解放，年轻人，更强调个性追求，也更强调彼此之间的平等对话，即便是存在辈分之差，也亦如此。</p>
-<p>而说教，是一种最让人难以接受的劝告方式。人人都有排斥说教的心理，而这点在年轻人身上表现得淋漓尽致，年轻人向来不喜欢他人以长辈的身份说事。</p>
-<p>第二，贬低了年轻人自身的努力</p>
-<p>首先，现在不少人对年轻人的评价是：“垮掉的一代”，因为他们个性叛逆，社会责任感弱，心理承受能力低，团队意识差，信仰缺失……</p>
-<p>而视频中反复提到的“一代不如一代”的话语，说得也不过如此。虽说原文不是真正的贬低之意，但是“说者无意，听者有心”，这不经意间就刺痛许多年轻人脆弱的自尊心。</p>
-<p>其次，演讲中多次提到，正如：</p>
-<p>“人类积攒了几千年的财富，所有的知识、见识、智慧和艺术，像是专门为你们准备的礼物。”</p>
-<p>很显然，这好像是在告诉年轻人：嘿，你们比我们幸福多了，你们是含着金钥匙长大的，拥有的选择更多，资源也更多，应该珍惜身边拥有的优越条件……</p>
-<p>简言之概括：你们可以不费吹灰之力就能坐享老祖宗打下的美好天下，现在也该醒醒了，自己努力奋斗吧~</p>
-<p>然而，何冰真的有错吗？</p>
-<p>很显然，作为视频中的演讲者，他只是一个对外传递信息的发声者，他只是在为年轻人打气加油，他并没有错。</p>
-<p>而他为何成为了众矢之的的攻击对象？很显然，他被当成了泄气的对象。</p>
-<p>学者朱大可曾说：“话语暴力和秽语现象，已成中国大众文化的一种重要景观。”<br>
-从诸多的网络语言暴力案件中可以看出，网络中的群体“骂街”，向来都不太分青红皂白，他们可以在短瞬间迅速站队，在群起哄或仇视心理（如仇富心态）的驱动下，对自己看不惯的人或事进行谩骂、诋毁。最终，事件就会从一小撮的网络语言暴力中，发展成了像滚雪球效应一样，越演越烈。</p>
-<p>佛祖曾说：“你心中有什么，你看到的就是什么。”<br>
-根据研究发现，网络语言暴力的出现更多的是源于个人自身的焦虑。所以，这就不难理解，为何《后浪》被批判为小资短片，讲述的是富家子弟的人生。毕竟，现实中，大部分人都过得挺不容易。</p>
-<p>然而，短片拍得过于“高大上”，有错吗？</p>
-<p>很显然，也并没有错。</p>
-<p>每一个年轻人都会经历人生的“窄门”，只有停下沮丧，才能去思考，才能更好地去迎接生活的挑战。</p>
-<p>人生，本来就是有苦有甜，苦是生活的一面，甜也是生活的一面。而痛苦的一面，不是用来展现给别人看的。这世间所有的痛苦都无法做到感同身受，而幸福可以。</p>
-<p>励志的人生，可以激励更多的人奋勇拼搏。</p>
-<p>世界之大，本应是丰富多彩的。年轻人，应该多向美好的生活看齐，向美好的生活奋勇前行。</p>
-<p>奔涌吧，后浪！</p>
+        <updated>2021-04-25T14:50:11.000Z</updated>
+        <content type="html"><![CDATA[<h1 id="代理模式">代理模式</h1>
+<blockquote>
+<p><strong>代理模式的定义：</strong></p>
+<p>由于某些原因需要给某对象提供一个代理以控制对该对象的访问。这时，访问对象不适合或者不能直接引用目标对象，代理对象作为访问对象和目标对象之间的中介。</p>
+<p><strong>代理模式的优点：</strong></p>
+<ul>
+<li>代理模式在客户端与目标对象之间起到一个中介作用和保护目标对象的作用</li>
+<li>代理对象可以扩展目标对象的功能</li>
+<li>代理模式能将客户端与目标对象分离，在一定程度上降低了系统的耦合度，增加了程序的可扩展性</li>
+</ul>
+<p><strong>代理模式的缺点：</strong></p>
+<ul>
+<li>代理模式会造成系统设计中类的数量增加，不管是静态代理硬编码的代理类，还是动态代理生成的代理类，<strong>内存中都要占据方法区资源(jdk8 叫原空间)</strong></li>
+<li>增加了系统的复杂度</li>
+</ul>
+</blockquote>
+<h2 id="代理模式结构">代理模式结构</h2>
+<p>代理模式通过一个实现了抽象主题功能的代理来包含真实主题，从而实现对真实主题的访问。</p>
+<p>主要角色如下：</p>
+<ul>
+<li>**抽象主题（Subject）类：**通过接口或抽象类，声明真实主题和代理对象需要实现的业务方法。</li>
+<li>**真实主题（Real Subject）类：**实现了抽象主题中的具体业务。</li>
+<li>**代理（Proxy）类：**实现了抽象主题中的接口，但并没有具体的业务逻辑；代理类内部含有对真实主题的引用，可以访问、控制或扩展真实主题的功能。</li>
+</ul>
+<p><em>这里提一嘴，这个代理类不要局限于硬编码的手写代理类，真实工作中，碰到的更多的是JDK、Cglib动态代理类。</em></p>
+<p>结构图如下：</p>
+<figure data-type="image" tabindex="1"><img src="https://tva1.sinaimg.cn/large/008eGmZEly1gpeiftskpsj30r40cdt9h.jpg" alt="代理模式UML" loading="lazy"></figure>
+<h2 id="代理模式实现">代理模式实现</h2>
+<pre><code class="language-java">//抽象主题
+public interface Subject {
+    void say();
+    void run();
+}
+//真实主题
+public class RealSubject implements Subject {
+    @Override
+    public void say() {
+        System.out.println(&quot;say&quot;);
+    }
+    @Override
+    public void run() {
+        System.out.println(&quot;run&quot;);
+    }
+}
+//代理类
+public class Proxy implements Subject {
+    private RealSubject subject;
+    public Proxy(RealSubject realSubject) {
+        this.subject = realSubject;
+    }
+    @Override
+    public void say() {
+        System.out.println(&quot;proxy say start ---&quot;);
+        this.subject.say();
+        System.out.println(&quot;proxy say end ---&quot;);
+    }
+    @Override
+    public void run() {
+        System.out.println(&quot;proxy run start ---&quot;);
+        this.subject.run();
+        System.out.println(&quot;proxy run end ---&quot;);
+    }
+}
+
+//测试代码
+public class ProxyTest01 {
+    public static void main(String[] args) {
+        RealSubject realSubject = new RealSubject();
+        Proxy proxy = new Proxy(realSubject);
+        proxy.say();
+        proxy.run();
+    }
+}
+</code></pre>
+<h2 id="总结">总结</h2>
+<p>结构与代码都比较简单，没有太多好说的，这里想说下自己的感悟，这也是看完了spring aop源码之后，回过头来再整理知识点的时候有所感触。</p>
+<p>就是哪怕框架把这个代理模式玩的再花里胡哨，再高深莫测，难以理解，也都绕不开这个简单而又包罗万象的代理架构。无非就是代理类在引用目标类的时候，做了更近一步的抽象，而不是简单的持有。或者在组织拦截调用做了更为复杂的处理。后面我们顺着主脉络把这些都捋一捋。</p>
+<p>不要被认知偏差，或者思维定势所困扰，现在不了解没关系，很快就能把它吃干抹净。</p>
 ]]></content>
     </entry>
 </feed>
